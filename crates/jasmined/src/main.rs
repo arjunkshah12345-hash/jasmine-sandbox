@@ -53,6 +53,15 @@ enum Cmd {
         /// Page-cache prewarm budget before snapshotting (0 = off).
         #[arg(long, default_value_t = 256)]
         prewarm_mib: u32,
+        /// Shell command run once before the snapshot, e.g. 'apt-get update && apt-get install -y chromium'.
+        #[arg(long)]
+        setup: Option<String>,
+        /// Shell command left running in the snapshot, so every sandbox starts with it up (e.g. a headless browser).
+        #[arg(long)]
+        start: Option<String>,
+        /// Port the --start command listens on; the build waits for it before snapshotting.
+        #[arg(long)]
+        ready_port: Option<u16>,
     },
 }
 
@@ -64,8 +73,8 @@ async fn main() -> Result<()> {
     let server = matches!(cli.cmd, Cmd::Serve { .. });
     let mgr = manager::Manager::new(cfg, server, if server { cli.net_pool } else { 0 }).await?;
     match cli.cmd {
-        Cmd::Build { name, image, vcpus, mem_mib, prewarm_mib } => {
-            let meta = mgr.build_template(&name, &image, vcpus, mem_mib, prewarm_mib).await?;
+        Cmd::Build { name, image, vcpus, mem_mib, prewarm_mib, setup, start, ready_port } => {
+            let meta = mgr.build_template(&name, &image, vcpus, mem_mib, prewarm_mib, manager::BuildOpts { setup, start, ready_port }).await?;
             println!("{}", serde_json::to_string_pretty(&meta)?);
         }
         Cmd::Serve { listen, api_key } => {
