@@ -58,7 +58,18 @@ jobs:
           nohup python3 -m http.server 8081 --bind 2001:db8:6a73::1 --directory /tmp/www >/dev/null 2>&1 &
           sleep 1
           sudo grep -i ipv6 /tmp/jasmined.log || true
-          node sdk/ipv6-smoke.mjs
+          if ! node sdk/ipv6-smoke.mjs; then
+            ns=$(ip netns list | awk '{print $1}' | grep '^wrn' | head -1)
+            set -x
+            sudo ip -6 addr; sudo ip -6 route; sudo sysctl net.ipv6.conf.all.forwarding
+            sudo ip6tables -S; sudo ip6tables -t nat -S; sudo ip6tables -L FORWARD -v -n; sudo ip6tables -t nat -L POSTROUTING -v -n
+            sudo ip netns exec $ns ip -6 addr; sudo ip netns exec $ns ip -6 route; sudo ip netns exec $ns ip -6 neigh
+            sudo ip netns exec $ns sysctl net.ipv6.conf.all.forwarding
+            sudo ip netns exec $ns ip6tables -t nat -L POSTROUTING -v -n
+            sudo ip netns exec $ns ping -6 -c1 -W2 2001:db8:6a73::2 || true
+            sudo ip netns exec $ns ping -6 -c1 -W2 fd00:6a73::2 || true
+            exit 1
+          fi
       - name: Cross-provider comparison (providers without secrets are skipped)
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
