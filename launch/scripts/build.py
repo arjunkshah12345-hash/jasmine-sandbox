@@ -51,37 +51,42 @@ SCRIPTS = {
     },
     "jasmine-cloud": {
         "title": "Jasmine Cloud · Launch video",
-        "sub": "Talking head, about 75 seconds. Optional opener before the first line: “I'm 14, and…”",
+        "sub": "One take, outdoors, about 55 seconds. Frame yourself centred, chest up, with sky or open space around your head: the captions sit beside and behind you. Talk it, don't recite it. The edit adds everything in \u201cOn screen\u201d.",
         "beats": [
-            ("Hook", "Close-up, straight to lens", [
-                "Two weeks ago I open-sourced Jasmine: sandboxes for AI agents that start in a tenth of a second.",
-                "The number one reply was: “I don't have a server for this.”",
-                "So today, you don't need one. This is <b>Jasmine Cloud</b>.",
-            ], "Cut to the launch film's title card on the last line"),
-            ("What it is", "Medium", [
-                "Same engine, same API, running on our machines.",
-                "Sign in, make a key, and you're running code in its own virtual machine in seconds.",
-                "Already self-hosting? You change <b>one environment variable</b>.",
-            ], "Screen recording: sign in, make a key, create a sandbox"),
-            ("Price", "Close-up. Slow down here.", [
-                "It's <b>three cents an hour</b> for a four-core, eight-gig sandbox.",
-                "E2B and Daytona list about thirty-three cents for the same size.",
-                "The cheapest I found, Boat, is three point six cents, with a twenty-dollar monthly minimum.",
-            ], "Launch film, price table"),
-            ("Prepaid", "Medium", [
-                "It's prepaid and billed by the second. You get <b>two dollars free</b>, no card.",
-                "When your balance hits zero, your sandboxes pause. Nothing gets deleted, and you can never owe money.",
-            ], None),
-            ("Safe by default", "Medium", [
-                "Every sandbox gets its own kernel, a timeout, and a locked-down network.",
-            ], None),
-            ("Still open", "Medium", [
-                "And it's all still open source. If you ever want to leave, run it yourself and change that one variable back.",
-            ], None),
-            ("Close", "Close-up. Hold two seconds at the end.", [
-                "Go to <b>tryjasmine.dev</b>. Two dollars free, no card.",
-                "Show me what you build.",
-            ], None),
+            ("Cold open", "Full frame, straight to lens", [
+                "Your agent just wrote a thousand lines of code.",
+                "Where's it supposed to run them?",
+            ], "Caption \u201ca thousand lines\u201d, a glass diff card (+1,024) floats in beside you"),
+            ("The problem", "Full frame", [
+                "Your laptop? Production?",
+            ], "Two small glass cards pop in, \u201c~/laptop\u201d and \u201cproduction\u201d, each struck out"),
+            ("Who", "Full frame", [
+                "I'm [your name], and I built <b>Jasmine</b>.",
+            ], "Lower third: your name · built Jasmine"),
+            ("Recap", "Full frame", [
+                "Two weeks ago we open-sourced it. Every agent task gets its own computer, ready in <b>a tenth of a second</b>.",
+            ], "Caption \u201cits own computer.\u201d then \u201c0.09 s\u201d"),
+            ("The ask", "Full frame, lean in a little", [
+                "And the number one thing you told us was: \u201cI don't have a server for this.\u201d",
+            ], "Big word \u201cserver.\u201d behind your head"),
+            ("Launch", "Full frame. Pause before it.", [
+                "So today, we're launching <b>Jasmine Cloud</b>.",
+            ], "Caption \u201cJasmine Cloud.\u201d"),
+            ("Demo", "You shrink to a card on the left; the product plays on the right", [
+                "Sign in, make a key, and your agent has its own computer in a tenth of a second.",
+                "Pause it between turns. Memory kept, billing stops.",
+                "Fork it, and run ten copies from that exact moment.",
+            ], "Dashboard: key created → sandbox running in 0.09 s → meter freezes on pause → one card splits into ten"),
+            ("Price", "Still a card", [
+                "It's <b>three cents an hour</b>. About eleven times less than E2B or Daytona.",
+                "Prepaid, by the second. You can never owe money.",
+            ], "Headline \u201cThree cents an hour.\u201d over the price bars; then \u201cYou can never owe money.\u201d"),
+            ("Why", "Back to full frame", [
+                "Models get smarter every month. But a smart agent with nowhere to run is just a chatbot.",
+            ], "Caption \u201cnowhere to run\u201d"),
+            ("Close", "Full frame. Smile on the last line.", [
+                "So give yours a computer. Two dollars free at <b>tryjasmine.dev</b>.",
+            ], "URL bar \u201ctryjasmine.dev\u201d with \u201cGet your key.\u201d, then the logo card: \u201cGive your agents a computer.\u201d"),
         ],
     },
 }
@@ -117,7 +122,7 @@ def page(s):
     beats = []
     for i, (lab, shot, lines, broll) in enumerate(s["beats"], 1):
         say = "".join(f"<p>{l}</p>" for l in lines)
-        br = f'<div class="broll">B-roll · {html.escape(broll)}</div>' if broll else ""
+        br = f'<div class="broll">On screen · {html.escape(broll)}</div>' if broll else ""
         beats.append(f'<section class="beat"><div><span class="n">{i:02d}</span><div class="lab">{lab}</div><div class="shot">{shot}</div></div><div class="say">{say}{br}</div></section>')
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/><title>{s['title']}</title><style>{CSS}</style></head>

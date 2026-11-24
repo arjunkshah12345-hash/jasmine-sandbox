@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[{"id":"name","type":"string","label":"Your name","default":"Your Name"},{"id":"role","type":"string","label":"Lower-third role","default":"built Jasmine"},{"id":"leaf","type":"color","label":"Leaf","default":"#a6e86b"}]'>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <script src="assets/cues.js"></script>
+    <style>
+      :root { --ground: #070807; --leaf: #a6e86b; --ink: #f4f5f0; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--ground); }
+      /* the dark room the speaker shrinks into */
+      #bg { position: absolute; inset: 0; background: radial-gradient(1200px 800px at 30% 40%, #161915 0%, #0b0c0b 55%, #070807 100%); }
+      #grain { position: absolute; inset: 0; width: 1920px; height: 1080px; opacity: .5; }
+      /* the speaker: full frame, or a rounded card on the left during the demo */
+      #cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; box-shadow: 0 60px 120px rgba(0,0,0,.6); }
+      #cam video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-span="total" data-duration="56.9" data-width="1920" data-height="1080" data-fps="30">
+      <div id="bg"></div>
+      <canvas id="grain" width="960" height="540"></canvas>
+      <div id="cam">
+        <video id="footage" class="clip" src="assets/footage.mp4" data-start="0" data-span="media" data-duration="53.7" data-track-index="0" data-has-audio="true"></video>
+      </div>
+      <div id="cap" class="clip" data-composition-id="cap" data-composition-src="compositions/captions.html" data-start="0" data-span="total" data-duration="56.9" data-track-index="1" data-track-kind="captions" data-width="1920" data-height="1080" style="z-index:3"></div>
+      <div id="ui" class="clip" data-composition-id="ui" data-composition-src="compositions/ui.html" data-start="0" data-span="total" data-duration="56.9" data-track-index="2" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:4"></div>
+      <div id="end" class="clip" data-composition-id="end" data-composition-src="compositions/end.html" data-start="53.7" data-duration="3.2" data-track-index="3" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:6"></div>
+      <audio id="bed" class="clip" src="assets/bed.wav" data-start="0" data-span="total" data-duration="56.9" data-track-index="4" data-volume="1"></audio>
+    </div>
+    <script>
+      (() => {
+        window.__timelines = window.__timelines || {};
+        const C = window.CUES, tl = gsap.timeline({ paused: true });
+        // seeded film grain on the background (static, so it never shimmers)
+        const g = document.getElementById("grain").getContext("2d"), img = g.createImageData(960, 540);
+        let s = 7; const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+        for (let i = 0; i < img.data.length; i += 4) { const v = rnd() * 40; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 60; }
+        g.putImageData(img, 0, 0);
+
+        // shrink into a card on the left for the demo, and come back for the close
+        const S = 0.37, CARD = { x: 110, y: 330 };
+        tl.to("#cam", { x: CARD.x, y: CARD.y, scale: S, borderRadius: 28 / S, duration: 0.7, ease: "power3.inOut" }, C.signin[0] - 0.1);
+        tl.to("#cam", { x: 0, y: 0, scale: 1, borderRadius: 0, duration: 0.7, ease: "power3.inOut" }, C.why[0] - 0.5);
+        // a slow push while full frame, so the single take never sits dead
+        tl.fromTo("#footage", { scale: 1 }, { scale: 1.05, duration: C.signin[0] - 0.1, ease: "none", immediateRender: true }, 0);
+        tl.to("#footage", { scale: 1, duration: 0.7, ease: "power3.inOut" }, C.signin[0] - 0.1);
+        tl.fromTo("#footage", { scale: 1 }, { scale: 1.06, duration: window.END_AT - C.why[0], ease: "none", immediateRender: false }, C.why[0] + 0.2);
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>
