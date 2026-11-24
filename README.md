@@ -54,6 +54,22 @@ const browser = await chromium.connectOverCDP(await sbx.cdpUrl());   // WebSocke
 and dev-server hot reload work over them. CI builds this template and drives a page on every push
 ([sdk/browser-smoke.mjs](sdk/browser-smoke.mjs)).
 
+## S3 mounts
+
+Mount a bucket from S3, or any S3-compatible store (R2, GCS, MinIO, Tigris) via `endpoint`, as a folder in a
+running sandbox. It works in any template with nothing installed: the agent doubles as FUSE's mount helper, and
+the daemon copies a pinned rclone into the sandbox on its first mount. Credentials go in the mount process's
+environment, never on a command line.
+
+```ts
+const path = await sbx.mountS3({ bucket: "datasets", prefix: "train", accessKeyId, secretAccessKey, readOnly: true });
+await sbx.exec(`ls ${path}`);                                  // /mnt/datasets
+```
+
+No keys means anonymous access to a public bucket. `POST /v1/sandboxes/{id}/mounts`, `DELETE ...?path=` to
+unmount. CI mounts a MinIO bucket, reads, writes, and checks a read-only prefix mount on every push
+([sdk/s3-smoke.mjs](sdk/s3-smoke.mjs)).
+
 ## fairbench: same machine, same image, same limits
 
 [fairbench](bench/fair) runs Jasmine, Docker (runc), gVisor and Kata Containers on **one host**, with the same

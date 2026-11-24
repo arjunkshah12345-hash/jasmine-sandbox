@@ -28,6 +28,9 @@ struct Cli {
     /// instead of root; gid `base` is the shared group that can read templates. Recommended for hosts that run other people's code.
     #[arg(long, env = "JASMINE_VM_UID_BASE", global = true)]
     vm_uid_base: Option<u32>,
+    /// Static rclone binary for S3 mounts (copied into a sandbox on its first mount).
+    #[arg(long, env = "JASMINE_RCLONE", default_value = "/usr/local/lib/jasmine/rclone", global = true)]
+    rclone: PathBuf,
     #[command(subcommand)]
     cmd: Cmd,
 }
@@ -69,7 +72,7 @@ enum Cmd {
 async fn main() -> Result<()> {
     tracing_subscriber::fmt().with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into())).init();
     let cli = Cli::parse();
-    let cfg = manager::Config { data: cli.data, firecracker: cli.firecracker, kernel: cli.kernel, agent_bin: cli.agent, vm_uid_base: cli.vm_uid_base };
+    let cfg = manager::Config { data: cli.data, firecracker: cli.firecracker, kernel: cli.kernel, agent_bin: cli.agent, vm_uid_base: cli.vm_uid_base, rclone_bin: cli.rclone };
     let server = matches!(cli.cmd, Cmd::Serve { .. });
     let mgr = manager::Manager::new(cfg, server, if server { cli.net_pool } else { 0 }).await?;
     match cli.cmd {

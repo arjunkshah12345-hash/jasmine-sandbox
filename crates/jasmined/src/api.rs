@@ -54,6 +54,7 @@ pub fn router(mgr: Arc<Manager>, api_key: Option<String>) -> Router {
         .route("/v1/sandboxes/{id}/ports/{port}/", axum::routing::any(preview_root))
         .route("/v1/sandboxes/{id}/ports/{port}/{*rest}", axum::routing::any(preview))
         .route("/v1/sandboxes/{id}/files", get(read_file).put(write_file))
+        .route("/v1/sandboxes/{id}/mounts", post(mount).delete(unmount))
         .layer(middleware::from_fn_with_state(state.clone(), auth))
         .route("/healthz", get(|| async { "ok" }))
         .layer(DefaultBodyLimit::max(1 << 30))
@@ -257,6 +258,24 @@ async fn write_file(State(st): State<AppState>, Path(id): Path<String>, Query(q)
     };
     st.mgr.ensure_running(&sbx).await?;
     sbx.agent.write_file(&q.path, mode, &body).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Mount an S3 (or S3-compatible) bucket inside the sandbox.
+async fn mount(State(st): State<AppState>, Path(id): Path<String>, Json(m): Json<crate::manager::S3Mount>) -> ApiResult<impl IntoResponse> {
+    let sbx = st.mgr.get(&id).await.ok_or_else(not_found)?;
+    let path = st.mgr.mount_s3(&sbx, m).await.map_err(|e| ApiError(StatusCode::BAD_REQUEST, format!("{e:#}")))?;
+    Ok((StatusCode::CREATED, Json(json!({ "path": path }))))
+}
+
+#[derive(Deserialize)]
+struct UnmountQuery {
+    path: String,
+}
+
+async fn unmount(State(st): State<AppState>, Path(id): Path<String>, Query(q): Query<UnmountQuery>) -> ApiResult<StatusCode> {
+    let sbx = st.mgr.get(&id).await.ok_or_else(not_found)?;
+    st.mgr.unmount(&sbx, &q.path).await.map_err(|e| ApiError(StatusCode::BAD_REQUEST, format!("{e:#}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
 

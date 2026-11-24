@@ -206,6 +206,40 @@ export class Sandbox {
     return this.client.request("POST", `${this.base}/snapshot`);
   }
 
+  /**
+   * Mount an S3 bucket (or R2, GCS, MinIO, Tigris... via `endpoint`) as a folder in the sandbox.
+   * No keys means anonymous access to a public bucket. Returns the mount path (default `/mnt/<bucket>`).
+   */
+  async mountS3(opts: {
+    bucket: string;
+    path?: string;
+    prefix?: string;
+    endpoint?: string;
+    region?: string;
+    accessKeyId?: string;
+    secretAccessKey?: string;
+    sessionToken?: string;
+    readOnly?: boolean;
+  }): Promise<string> {
+    const r = await this.client.request("POST", `${this.base}/mounts`, {
+      bucket: opts.bucket,
+      path: opts.path,
+      prefix: opts.prefix,
+      endpoint: opts.endpoint,
+      region: opts.region,
+      access_key_id: opts.accessKeyId,
+      secret_access_key: opts.secretAccessKey,
+      session_token: opts.sessionToken,
+      read_only: opts.readOnly ?? false,
+    });
+    return r.path;
+  }
+
+  /** Unmount a bucket mounted with `mountS3`. */
+  async unmount(path: string): Promise<void> {
+    await this.client.request("DELETE", `${this.base}/mounts?path=${encodeURIComponent(path)}`);
+  }
+
   /** URL that proxies to `port` inside the sandbox. */
   previewUrl(port: number, path = "/"): string {
     return `${this.client.url}${this.base}/ports/${port}${path.startsWith("/") ? path : `/${path}`}`;

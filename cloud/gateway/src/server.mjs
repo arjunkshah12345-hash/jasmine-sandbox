@@ -235,7 +235,7 @@ async function api(req, res, url) {
       if (r.status < 300) Object.assign(s, { state: "paused", pausedSince: nowS() });
       return send(res, r.status, r.body);
     }
-    if (s.state === "paused" && ["resume", "exec", "files", "snapshot"].includes(rest[0])) {
+    if (s.state === "paused" && ["resume", "exec", "files", "snapshot", "mounts"].includes(rest[0])) {
       // These wake a paused sandbox, so they need room under the limits.
       await requireCompute(a, { resuming: true });
     }
@@ -256,7 +256,7 @@ async function api(req, res, url) {
       }
       return send(res, r.status, r.status < 300 ? { ...r.body, source_sandbox: undefined } : r.body);
     }
-    if (["exec", "files"].includes(rest[0])) {
+    if (["exec", "files", "mounts"].includes(rest[0])) {
       Object.assign(s, { state: "running", pausedSince: null });
       return pipe(h, req, res, url.pathname + url.search);
     }
