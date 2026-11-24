@@ -59,15 +59,20 @@ jobs:
           sleep 1
           sudo grep -i ipv6 /tmp/jasmined.log || true
           if ! node sdk/ipv6-smoke.mjs; then
-            ns=$(ip netns list | awk '{print $1}' | grep '^wrn' | head -1)
             set -x
-            sudo ip -6 addr; sudo ip -6 route; sudo sysctl net.ipv6.conf.all.forwarding
-            sudo ip6tables -S; sudo ip6tables -t nat -S; sudo ip6tables -L FORWARD -v -n; sudo ip6tables -t nat -L POSTROUTING -v -n
-            sudo ip netns exec $ns ip -6 addr; sudo ip netns exec $ns ip -6 route; sudo ip netns exec $ns ip -6 neigh
-            sudo ip netns exec $ns sysctl net.ipv6.conf.all.forwarding
-            sudo ip netns exec $ns ip6tables -t nat -L POSTROUTING -v -n
-            sudo ip netns exec $ns ping -6 -c1 -W2 2001:db8:6a73::2 || true
-            sudo ip netns exec $ns ping -6 -c1 -W2 fd00:6a73::2 || true
+            ns=$(sudo ip netns list | awk '{print $1}' | grep '^wrn' | sort -V | head -1); k=${ns#wrn}
+            hip=$(sudo ip -6 -o addr show dev wrv$k scope global | awk '{print $4}' | cut -d/ -f1)
+            sudo sysctl net.ipv6.conf.wrv$k.forwarding net.ipv6.conf.inet6h.forwarding net.ipv6.conf.default.forwarding
+            sudo timeout 6 tcpdump -lni wrv$k -c 12 ip6 &
+            sleep 1
+            sudo ip netns exec $ns ping -6 -c2 -W2 $hip || true
+            sudo ip netns exec $ns ping -6 -c2 -W2 2001:db8:6a73::2 || true
+            wait
+            sudo ip netns exec $ns ip -6 neigh; sudo ip -6 neigh show dev wrv$k
+            sudo ip netns exec $ns nstat -az | grep -E 'Ip6(Out|In)(NoRoutes|Discards|Requests|AddrErrors)|Icmp6OutDestUnreachs' || true
+            sudo nstat -az | grep -E 'Ip6(Out|In)(NoRoutes|Discards|Requests|AddrErrors|ForwDatagrams)|Icmp6OutDestUnreachs' || true
+            sudo ip6tables -t raw -S; sudo ip6tables -t mangle -S
+            sudo nft list ruleset | grep -vE '^\s*$' | head -150
             exit 1
           fi
       - name: Cross-provider comparison (providers without secrets are skipped)
