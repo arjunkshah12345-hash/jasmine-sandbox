@@ -45,6 +45,20 @@ jobs:
           (cd sdk/typescript && npm install --silent --no-audit --no-fund && npm run --silent build)
           node sdk/smoke.mjs
           python3 sdk/smoke.py
+      - name: Outbound IPv6 (through a stand-in IPv6 internet; the host stays unreachable)
+        run: |
+          sudo ip netns add inet6
+          sudo ip link add inet6h type veth peer name inet6n netns inet6
+          sudo ip addr add 2001:db8:6a73::1/64 dev inet6h nodad && sudo ip link set inet6h up
+          sudo ip -n inet6 link set lo up
+          sudo ip -n inet6 addr add 2001:db8:6a73::2/64 dev inet6n nodad && sudo ip -n inet6 link set inet6n up
+          sudo ip -n inet6 -6 route add default via 2001:db8:6a73::1
+          mkdir -p /tmp/www && echo v6-ok > /tmp/www/index.html
+          sudo ip netns exec inet6 sh -c 'cd /tmp/www && nohup python3 -m http.server 8080 --bind 2001:db8:6a73::2 >/dev/null 2>&1 &'
+          nohup python3 -m http.server 8081 --bind 2001:db8:6a73::1 --directory /tmp/www >/dev/null 2>&1 &
+          sleep 1
+          sudo grep -i ipv6 /tmp/jasmined.log || true
+          node sdk/ipv6-smoke.mjs
       - name: Cross-provider comparison (providers without secrets are skipped)
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

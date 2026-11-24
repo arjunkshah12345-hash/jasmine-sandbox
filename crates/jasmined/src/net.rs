@@ -7,6 +7,12 @@
 //! own `tap0`. Each slot NATs the guest to a unique veth address, and the host
 //! masquerades that out to the internet.
 //!
+//! IPv6 mirrors this: the guest is fd00:6a73::2/126 via fd00:6a73::1 (set by the
+//! agent at boot), each slot NATs it to a unique address in fd00:6a73:1::/64, and
+//! the host masquerades that out. It is best-effort: on a host without IPv6 (or
+//! without ip6tables NAT) sandboxes stay IPv4-only and the guest's IPv6 route fails
+//! fast with "network unreachable", so dual-stack clients fall back at once.
+//!
 //! Slot setup costs tens of milliseconds of `ip`/`iptables` calls, so slots are
 //! built ahead of time and recycled. This keeps the create path free of
 //! network plumbing; it is infrastructure, not pre-started VMs.
@@ -27,10 +33,17 @@ pub const GATEWAY_MAC: &str = "06:00:ac:10:00:01";
 /// Kernel cmdline fragment: static IP config, no DHCP.
 pub const KERNEL_IP_ARG: &str = "ip=172.16.0.2::172.16.0.1:255.255.255.252::eth0:off";
 const MAX_SLOTS: u32 = 16_000;
+/// Guest and gateway IPv6 inside every slot. Must match the agent (crates/agent/src/sys.rs).
+pub const GUEST_IP6: &str = "fd00:6a73::2";
+pub const GATEWAY_IP6: &str = "fd00:6a73::1";
+/// Host side: one /126 per slot.
+const SLOT_NET6: &str = "fd00:6a73:1::/64";
 
 pub struct NetPool {
     /// When set, slot k's tap belongs to uid `base + k + 1`, the uid its VMM runs as.
     pub vm_uid_base: Option<u32>,
+    /// Host IPv6 forwarding and NAT are set up; slots get IPv6 too.
+    ipv6: bool,
     free: Mutex<VecDeque<u32>>,
     next: AtomicU32,
     min_free: usize,
@@ -54,6 +67,40 @@ fn veth_ips(k: u32) -> (String, String) {
     let base = k * 4;
     let (hi, lo) = (base / 256, base % 256);
     (format!("10.200.{hi}.{}", lo + 1), format!("10.200.{hi}.{}", lo + 2))
+}
+
+/// Host-side IPv6 /126 for slot k inside fd00:6a73:1::/64.
+fn veth_ips6(k: u32) -> (String, String) {
+    let base = k * 4;
+    let (hi, lo) = (base >> 16, base & 0xffff);
+    (format!("fd00:6a73:1::{hi:x}:{:x}", lo + 1), format!("fd00:6a73:1::{hi:x}:{:x}", lo + 2))
+}
+
+/// Host IPv6: forwarding, NAT66 and the same isolation rules as IPv4. Idempotent.
+async fn host_ipv6() -> Result<()> {
+    sh(&format!(
+        r#"
+[ -d /proc/sys/net/ipv6 ] && [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)" = 0 ]
+command -v ip6tables >/dev/null
+# Turning on forwarding makes the kernel ignore router advertisements, which would drop a
+# host's SLAAC default route. Keep accepting them on the interface that carries it.
+dev=$(ip -6 route show default 2>/dev/null | awk '{{for (i = 1; i < NF; i++) if ($i == "dev") {{ print $(i + 1); exit }}}}')
+if [ -n "$dev" ]; then sysctl -qw "net.ipv6.conf.$dev.accept_ra=2" || true; fi
+sysctl -qw net.ipv6.conf.all.forwarding=1
+R={SLOT_NET6}
+ip6tables -t nat -C POSTROUTING -s $R ! -d $R -j MASQUERADE 2>/dev/null || ip6tables -t nat -A POSTROUTING -s $R ! -d $R -j MASQUERADE
+ip6tables -C FORWARD -s $R -j ACCEPT 2>/dev/null || ip6tables -I FORWARD -s $R -j ACCEPT
+ip6tables -C FORWARD -d $R -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null ||
+  ip6tables -I FORWARD -d $R -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+# Isolation, above the accepts: no sandbox-to-sandbox, no cloud metadata (AWS fd00:ec2::254),
+# nothing on the host itself, no outbound SMTP.
+ip6tables -C FORWARD -s $R -d $R -j DROP 2>/dev/null || ip6tables -I FORWARD -s $R -d $R -j DROP
+ip6tables -C FORWARD -s $R -d fd00:ec2::/32 -j DROP 2>/dev/null || ip6tables -I FORWARD -s $R -d fd00:ec2::/32 -j DROP
+ip6tables -C INPUT -s $R -j DROP 2>/dev/null || ip6tables -I INPUT -s $R -j DROP
+ip6tables -C FORWARD -s $R -p tcp --dport 25 -j DROP 2>/dev/null || ip6tables -I FORWARD -s $R -p tcp --dport 25 -j DROP
+"#
+    ))
+    .await
 }
 
 async fn sh(script: &str) -> Result<()> {
@@ -95,8 +142,15 @@ iptables -C FORWARD -s 10.200.0.0/16 -p tcp --dport 25 -j DROP 2>/dev/null || ip
 {cleanup}"#))
         .await
         .context("host network setup (needs root, iproute2, iptables)")?;
+        let ipv6 = match host_ipv6().await {
+            Ok(()) => true,
+            Err(e) => {
+                tracing::warn!("IPv6 unavailable on this host; sandboxes are IPv4-only: {e:#}");
+                false
+            }
+        };
         let first = if server { 0 } else { MAX_SLOTS + 1 + std::process::id() % 300 };
-        let pool = Arc::new(NetPool { vm_uid_base, free: Mutex::new(VecDeque::new()), next: AtomicU32::new(first), min_free, wake: Notify::new() });
+        let pool = Arc::new(NetPool { vm_uid_base, ipv6, free: Mutex::new(VecDeque::new()), next: AtomicU32::new(first), min_free, wake: Notify::new() });
         // Fill synchronously to the minimum so the first creates are fast, then keep topped up.
         for _ in 0..min_free {
             let k = pool.build_slot().await?;
@@ -150,6 +204,26 @@ ip netns exec {ns} sh -ec '
 "#
         ))
         .await?;
+        if self.ipv6 {
+            let (host_ip6, ns_ip6) = veth_ips6(k);
+            // Best-effort: a slot without IPv6 still works over IPv4.
+            if let Err(e) = sh(&format!(
+                r#"
+ip -6 addr add {host_ip6}/126 dev wrv{k} nodad
+ip -n {ns} -6 addr add {ns_ip6}/126 dev veth0 nodad
+ip -n {ns} -6 route add default via {host_ip6}
+ip -n {ns} -6 addr add {GATEWAY_IP6}/126 dev {TAP} nodad
+ip netns exec {ns} sh -ec '
+  sysctl -qw net.ipv6.conf.all.forwarding=1
+  ip6tables -t nat -A POSTROUTING -o veth0 -s {GUEST_IP6} -j MASQUERADE
+'
+"#
+            ))
+            .await
+            {
+                tracing::warn!("slot {k}: IPv6 setup failed, IPv4 only: {e:#}");
+            }
+        }
         Ok(k)
     }
 
@@ -169,7 +243,7 @@ ip netns exec {ns} sh -ec '
     /// tenant from inheriting the previous one's NAT state.
     pub async fn release(&self, slot: Slot) {
         let ns = ns_name(slot.0);
-        let _ = sh(&format!("ip netns exec {ns} conntrack -F 2>/dev/null || true")).await;
+        let _ = sh(&format!("ip netns exec {ns} sh -c 'conntrack -F; conntrack -F -f ipv6' 2>/dev/null || true")).await;
         self.free.lock().await.push_back(slot.0);
     }
 }
