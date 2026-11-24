@@ -56,7 +56,7 @@ jobs:
           sudo mkdir -p /tmp/s3data/jasmine-test && echo "hello from s3" | sudo tee /tmp/s3data/jasmine-test/hello.txt >/dev/null
           sudo ip netns exec s3 sh -c 'nohup /usr/local/lib/jasmine/rclone serve s3 /tmp/s3data --addr 10.99.0.2:9000 --auth-key jasmine,jasmine-secret >/tmp/s3serve.log 2>&1 &'
           for i in $(seq 40); do curl -s -o /dev/null http://10.99.0.2:9000/ && break; sleep 0.25; done
-          S3_ENDPOINT=http://10.99.0.2:9000 S3_KEY=jasmine S3_SECRET=jasmine-secret node sdk/s3-smoke.mjs || { sudo tail -30 /tmp/s3serve.log; exit 1; }
+          S3_ENDPOINT=http://10.99.0.2:9000 S3_KEY=jasmine S3_SECRET=jasmine-secret node sdk/s3-smoke.mjs || { sudo tail -30 /tmp/s3serve.log; curl -s -X POST localhost:7171/v1/sandboxes -d '{}' -H 'content-type: application/json' | python3 -c 'import json,sys,urllib.request as u; i=json.load(sys.stdin)["id"]; r=u.Request(f"http://localhost:7171/v1/sandboxes/{i}/exec", json.dumps({"cmd": "ls -l /dev/fuse /usr/local/bin/fuser* /.jasmine; grep -i fuse /proc/filesystems /proc/misc"}).encode(), {"content-type": "application/json"}); print(u.urlopen(r).read().decode())'; exit 1; }
       - name: Browser template (Chromium captured running; CDP over the preview URL)
         run: |
           time sudo jasmined build browser chromedp/headless-shell:stable --mem-mib 2048 --ready-port 9222 \

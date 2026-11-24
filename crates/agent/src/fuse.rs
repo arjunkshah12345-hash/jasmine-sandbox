@@ -77,11 +77,16 @@ fn run(args: &[String]) -> io::Result<()> {
         }
     }
 
-    let rootmode = std::fs::metadata(&mnt)?.mode() & libc::S_IFMT;
+    let ctx = |what: String| move |e: io::Error| io::Error::new(e.kind(), format!("{what}: {e}"));
+    let rootmode = std::fs::metadata(&mnt).map_err(ctx(format!("mountpoint {mnt}")))?.mode() & libc::S_IFMT;
     let dev = c"/dev/fuse";
+    // devtmpfs normally has it; create it if not (FUSE is always char 10:229).
+    if !std::path::Path::new("/dev/fuse").exists() {
+        unsafe { libc::mknod(dev.as_ptr(), libc::S_IFCHR | 0o666, libc::makedev(10, 229)) };
+    }
     let fd = unsafe { libc::open(dev.as_ptr(), libc::O_RDWR) };
     if fd < 0 {
-        return Err(io::Error::last_os_error());
+        return Err(ctx("open /dev/fuse (is FUSE in the guest kernel?)".into())(io::Error::last_os_error()));
     }
     let mut data = format!("fd={fd},rootmode={rootmode:o},user_id=0,group_id=0");
     for e in &extra {
@@ -104,14 +109,14 @@ fn run(args: &[String]) -> io::Result<()> {
     if rc != 0 {
         let e = io::Error::last_os_error();
         unsafe { libc::close(fd) };
-        return Err(e);
+        return Err(ctx(format!("mount {mnt}"))(e));
     }
 
     let sent = send_fd(commfd, fd);
     unsafe { libc::close(fd) };
     if let Err(e) = sent {
         unsafe { libc::umount2(target.as_ptr(), libc::MNT_DETACH) };
-        return Err(e);
+        return Err(ctx("pass the fuse fd back over _FUSE_COMMFD".into())(e));
     }
     Ok(())
 }
