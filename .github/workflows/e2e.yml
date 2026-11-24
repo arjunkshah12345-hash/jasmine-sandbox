@@ -45,16 +45,18 @@ jobs:
           (cd sdk/typescript && npm install --silent --no-audit --no-fund && npm run --silent build)
           node sdk/smoke.mjs
           python3 sdk/smoke.py
-      - name: S3 mounts (against MinIO)
+      - name: S3 mounts (against an S3 server in its own network namespace)
         run: |
-          docker run -d --name minio -e MINIO_ROOT_USER=jasmine -e MINIO_ROOT_PASSWORD=jasmine-secret minio/minio server /data >/dev/null
-          IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' minio)
-          for i in $(seq 60); do curl -fs "http://$IP:9000/minio/health/ready" && break; sleep 0.5; done
-          export S3_ENDPOINT="http://$IP:9000" S3_KEY=jasmine S3_SECRET=jasmine-secret
-          export AWS_ACCESS_KEY_ID=$S3_KEY AWS_SECRET_ACCESS_KEY=$S3_SECRET AWS_DEFAULT_REGION=us-east-1
-          aws --endpoint-url "$S3_ENDPOINT" s3 mb s3://jasmine-test
-          echo "hello from s3" > /tmp/hello.txt && aws --endpoint-url "$S3_ENDPOINT" s3 cp /tmp/hello.txt s3://jasmine-test/hello.txt
-          node sdk/s3-smoke.mjs
+          # rclone serve s3 stands in for S3, reached through the host like the internet.
+          sudo ip netns add s3
+          sudo ip link add s3h type veth peer name s3n netns s3
+          sudo ip addr add 10.99.0.1/30 dev s3h && sudo ip link set s3h up
+          sudo ip -n s3 addr add 10.99.0.2/30 dev s3n && sudo ip -n s3 link set s3n up && sudo ip -n s3 link set lo up
+          sudo ip -n s3 route add default via 10.99.0.1
+          sudo mkdir -p /tmp/s3data/jasmine-test && echo "hello from s3" | sudo tee /tmp/s3data/jasmine-test/hello.txt >/dev/null
+          sudo ip netns exec s3 sh -c 'nohup /usr/local/lib/jasmine/rclone serve s3 /tmp/s3data --addr 10.99.0.2:9000 --auth-key jasmine,jasmine-secret >/tmp/s3serve.log 2>&1 &'
+          for i in $(seq 40); do curl -s -o /dev/null http://10.99.0.2:9000/ && break; sleep 0.25; done
+          S3_ENDPOINT=http://10.99.0.2:9000 S3_KEY=jasmine S3_SECRET=jasmine-secret node sdk/s3-smoke.mjs || { sudo tail -30 /tmp/s3serve.log; exit 1; }
       - name: Browser template (Chromium captured running; CDP over the preview URL)
         run: |
           time sudo jasmined build browser chromedp/headless-shell:stable --mem-mib 2048 --ready-port 9222 \

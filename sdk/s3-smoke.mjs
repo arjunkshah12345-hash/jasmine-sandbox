@@ -1,6 +1,7 @@
-// S3 mounts end to end against an S3-compatible server (MinIO in CI): read an object the
+// S3 mounts end to end against an S3-compatible server: read an object the
 // host put there, write one from the sandbox and see it land in the bucket, then unmount.
 // Env: S3_ENDPOINT, S3_KEY, S3_SECRET, S3_BUCKET (the bucket holds hello.txt = "hello from s3").
+// CI serves it with `rclone serve s3`; the aws CLI checks writes from the host side.
 import { execFileSync } from "node:child_process";
 import { Jasmine } from "./typescript/dist/index.js";
 
