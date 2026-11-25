@@ -57,5 +57,5 @@ jobs:
           TAG="kernel-${KERNEL}-${REV}"
           if gh release view "$TAG" >/dev/null 2>&1; then echo "$TAG already published"; exit 0; fi
           (cd dist && sha256sum * > SHA256SUMS && cat SHA256SUMS)
-          gh release create "$TAG" dist/* --target "${{ github.sha }}" --title "Guest kernel ${KERNEL} (${REV})" \
+          gh release create "$TAG" dist/* --latest=false --target "${{ github.sha }}" --title "Guest kernel ${KERNEL} (${REV})" \
             --notes "Jasmine's guest kernel: Firecracker's CI config (${FC_CONFIG}) for Linux ${KERNEL}, plus dev/kernel/jasmine.config (FUSE for S3 mounts). Used by dev/setup-host.sh. Not a Jasmine release."

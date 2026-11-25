@@ -40,4 +40,4 @@ jobs:
       - uses: actions/download-artifact@v4
         with: { merge-multiple: true }
       - env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh release create "$GITHUB_REF_NAME" jasmine-*.tar.gz* --repo "$GITHUB_REPOSITORY" --generate-notes --title "Jasmine $GITHUB_REF_NAME"
+        run: gh release create "$GITHUB_REF_NAME" jasmine-*.tar.gz* --repo "$GITHUB_REPOSITORY" --generate-notes --latest --title "Jasmine $GITHUB_REF_NAME"
