@@ -45,6 +45,36 @@ jobs:
           (cd sdk/typescript && npm install --silent --no-audit --no-fund && npm run --silent build)
           node sdk/smoke.mjs
           python3 sdk/smoke.py
+      - name: Outbound IPv6 (through a stand-in IPv6 internet; the host stays unreachable)
+        run: |
+          sudo ip netns add inet6
+          sudo ip link add inet6h type veth peer name inet6n netns inet6
+          sudo ip addr add 2001:db8:6a73::1/64 dev inet6h nodad && sudo ip link set inet6h up
+          sudo ip -n inet6 link set lo up
+          sudo ip -n inet6 addr add 2001:db8:6a73::2/64 dev inet6n nodad && sudo ip -n inet6 link set inet6n up
+          sudo ip -n inet6 -6 route add default via 2001:db8:6a73::1
+          mkdir -p /tmp/www && echo v6-ok > /tmp/www/index.html
+          sudo ip netns exec inet6 sh -c 'cd /tmp/www && nohup python3 -m http.server 8080 --bind 2001:db8:6a73::2 >/dev/null 2>&1 &'
+          nohup python3 -m http.server 8081 --bind 2001:db8:6a73::1 --directory /tmp/www >/dev/null 2>&1 &
+          sleep 1
+          sudo grep -i ipv6 /tmp/jasmined.log || true
+          if ! node sdk/ipv6-smoke.mjs; then
+            set -x
+            ns=$(sudo ip netns list | awk '{print $1}' | grep '^wrn' | sort -V | head -1); k=${ns#wrn}
+            hip=$(sudo ip -6 -o addr show dev wrv$k scope global | awk '{print $4}' | cut -d/ -f1)
+            sudo sysctl net.ipv6.conf.wrv$k.forwarding net.ipv6.conf.inet6h.forwarding net.ipv6.conf.default.forwarding
+            sudo timeout 8 tcpdump -lni wrv$k -c 12 ip6 & tpid=$!
+            sleep 1
+            sudo ip netns exec $ns ping -6 -c2 -W2 $hip || true
+            sudo ip netns exec $ns ping -6 -c2 -W2 2001:db8:6a73::2 || true
+            wait $tpid || true
+            sudo ip netns exec $ns ip -6 neigh; sudo ip -6 neigh show dev wrv$k
+            sudo ip netns exec $ns nstat -az | grep -E 'Ip6(Out|In)(NoRoutes|Discards|Requests|AddrErrors)|Icmp6OutDestUnreachs' || true
+            sudo nstat -az | grep -E 'Ip6(Out|In)(NoRoutes|Discards|Requests|AddrErrors|ForwDatagrams)|Icmp6OutDestUnreachs' || true
+            sudo ip6tables -t raw -S; sudo ip6tables -t mangle -S
+            sudo nft list ruleset | grep -vE '^\s*$' | head -150
+            exit 1
+          fi
       - name: Browser template (Chromium captured running; CDP over the preview URL)
         run: |
           time sudo jasmined build browser chromedp/headless-shell:stable --mem-mib 2048 --ready-port 9222 \
