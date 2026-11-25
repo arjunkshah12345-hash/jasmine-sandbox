@@ -49,17 +49,19 @@ fi
 # built with: to switch an existing host, remove $DATA/vmlinux, rerun this, and rebuild templates.
 JASMINE_KERNEL_REPO="${JASMINE_KERNEL_REPO:-arjunkshah12345-hash/jasmine-sandbox}"
 JASMINE_KERNEL="${JASMINE_KERNEL:-kernel-6.1.155-jasmine1}"
-if [ ! -f "$DATA/vmlinux" ] && [ "$JASMINE_KERNEL" != none ]; then
-  (
-    set -e
-    base="https://github.com/${JASMINE_KERNEL_REPO}/releases/download/${JASMINE_KERNEL}"
-    f="vmlinux-${JASMINE_KERNEL#kernel-}-${ARCH}"
-    T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
-    curl -fsSL -o "$T/$f" "$base/$f"
-    curl -fsSL "$base/SHA256SUMS" | grep "  $f\$" | (cd "$T" && sha256sum -c --status -)
-    install -m 0644 "$T/$f" "$DATA/vmlinux"
+# (A function with explicit `|| return`: `set -e` is ignored inside anything tested by `||`.)
+jasmine_kernel() {
+  base="https://github.com/${JASMINE_KERNEL_REPO}/releases/download/${JASMINE_KERNEL}"
+  f="vmlinux-${JASMINE_KERNEL#kernel-}-${ARCH}"
+  T="$(mktemp -d)" || return 1
+  curl -fsSL -o "$T/$f" "$base/$f" &&
+    curl -fsSL "$base/SHA256SUMS" | grep "  $f\$" | (cd "$T" && sha256sum -c --status -) &&
+    install -m 0644 "$T/$f" "$DATA/vmlinux" &&
     echo "kernel: $JASMINE_KERNEL ($ARCH)"
-  ) || echo "Jasmine kernel $JASMINE_KERNEL unavailable; using Firecracker's CI kernel (no FUSE, so no S3 mounts)" >&2
+  rc=$?; rm -rf "$T"; return $rc
+}
+if [ ! -f "$DATA/vmlinux" ] && [ "$JASMINE_KERNEL" != none ]; then
+  jasmine_kernel || echo "Jasmine kernel $JASMINE_KERNEL unavailable; using Firecracker's CI kernel (no FUSE, so no S3 mounts)" >&2
 fi
 if [ ! -f "$DATA/vmlinux" ]; then
   # Firecracker's CI kernels. Path-style S3 URL (the bucket name has dots, which breaks TLS
