@@ -44,6 +44,12 @@ pub fn init_system() {
     if let Err(e) = link_up("lo") {
         eprintln!("jasmine-agent: lo up: {e}");
     }
+    // IPv4 comes from the kernel's ip= argument. IPv6 has no such argument, so set it here:
+    // a fixed address and default route, like IPv4 (the host gives every slot the same
+    // gateway), and skip duplicate address detection so it works the instant we restore.
+    if let Err(e) = ipv6_setup("eth0") {
+        eprintln!("jasmine-agent: ipv6: {e}");
+    }
     unsafe { libc::setsid() };
 }
 
@@ -125,4 +131,91 @@ pub fn add_entropy(bytes: &[u8]) {
             libc::close(fd);
         }
     }
+}
+
+/// Guest IPv6, mirroring the IPv4 /30: fd00:6a73::2/126 via fd00:6a73::1. Must match the host (jasmined net.rs).
+const GUEST_IP6: [u16; 8] = [0xfd00, 0x6a73, 0, 0, 0, 0, 0, 2];
+const GATEWAY_IP6: [u16; 8] = [0xfd00, 0x6a73, 0, 0, 0, 0, 0, 1];
+
+fn in6(a: [u16; 8]) -> libc::in6_addr {
+    let mut b = [0u8; 16];
+    for (i, w) in a.iter().enumerate() {
+        b[2 * i..2 * i + 2].copy_from_slice(&w.to_be_bytes());
+    }
+    libc::in6_addr { s6_addr: b }
+}
+
+/// `struct in6_ifreq` from <linux/ipv6.h>.
+#[repr(C)]
+struct In6Ifreq {
+    addr: libc::in6_addr,
+    prefixlen: u32,
+    ifindex: libc::c_int,
+}
+
+/// `struct in6_rtmsg` from <linux/ipv6_route.h>.
+#[repr(C)]
+struct In6Rtmsg {
+    dst: libc::in6_addr,
+    src: libc::in6_addr,
+    gateway: libc::in6_addr,
+    typ: u32,
+    dst_len: u16,
+    src_len: u16,
+    metric: u32,
+    info: libc::c_ulong,
+    flags: u32,
+    ifindex: libc::c_int,
+}
+
+fn ipv6_setup(ifname: &str) -> io::Result<()> {
+    if !std::path::Path::new("/proc/sys/net/ipv6").exists() {
+        return Ok(()); // guest kernel built without IPv6
+    }
+    // No DAD (the address is ours by construction), no router advertisements or autoconf
+    // (the route is static), so nothing changes after the snapshot is taken.
+    for (k, v) in [("accept_dad", "0"), ("dad_transmits", "0"), ("accept_ra", "0"), ("autoconf", "0")] {
+        let _ = std::fs::write(format!("/proc/sys/net/ipv6/conf/{ifname}/{k}"), v);
+        let _ = std::fs::write(format!("/proc/sys/net/ipv6/conf/default/{k}"), v);
+    }
+    let name = CString::new(ifname).unwrap();
+    let ifindex = unsafe { libc::if_nametoindex(name.as_ptr()) } as libc::c_int;
+    if ifindex == 0 {
+        return Err(io::Error::last_os_error());
+    }
+    unsafe {
+        let fd = libc::socket(libc::AF_INET6, libc::SOCK_DGRAM | libc::SOCK_CLOEXEC, 0);
+        if fd < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        let ifr = In6Ifreq { addr: in6(GUEST_IP6), prefixlen: 126, ifindex };
+        let mut rc = libc::ioctl(fd, libc::SIOCSIFADDR as _, &ifr);
+        if rc != 0 && io::Error::last_os_error().raw_os_error() == Some(libc::EEXIST) {
+            rc = 0;
+        }
+        if rc == 0 {
+            let rt = In6Rtmsg {
+                dst: in6([0; 8]),
+                src: in6([0; 8]),
+                gateway: in6(GATEWAY_IP6),
+                typ: 0,
+                dst_len: 0,
+                src_len: 0,
+                metric: 1,
+                info: 0,
+                flags: (libc::RTF_UP | libc::RTF_GATEWAY) as u32,
+                ifindex,
+            };
+            rc = libc::ioctl(fd, libc::SIOCADDRT as _, &rt);
+            if rc != 0 && io::Error::last_os_error().raw_os_error() == Some(libc::EEXIST) {
+                rc = 0;
+            }
+        }
+        let err = io::Error::last_os_error();
+        libc::close(fd);
+        if rc != 0 {
+            return Err(err);
+        }
+    }
+    Ok(())
 }

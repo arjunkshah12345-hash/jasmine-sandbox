@@ -40,18 +40,19 @@ fi
 # Optional: without it, everything except S3 mounts works.
 RCLONE_VERSION="${RCLONE_VERSION:-v1.68.2}"
 RCLONE=/usr/local/lib/jasmine/rclone
-if [ ! -x "$RCLONE" ]; then
-  (
-    set -e
-    RARCH=$([ "$ARCH" = aarch64 ] && echo arm64 || echo amd64)
-    Z="rclone-${RCLONE_VERSION}-linux-${RARCH}.zip"
-    T="$(mktemp -d)"
-    trap 'rm -rf "$T"' EXIT
-    curl -fsSL -o "$T/$Z" "https://downloads.rclone.org/${RCLONE_VERSION}/$Z"
-    curl -fsSL "https://downloads.rclone.org/${RCLONE_VERSION}/SHA256SUMS" | grep "  $Z\$" | (cd "$T" && sha256sum -c --status -)
-    python3 -c 'import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extract(sys.argv[2], sys.argv[3])' "$T/$Z" "${Z%.zip}/rclone" "$T"
+# (A function with explicit &&: `set -e` is ignored inside anything tested by `||`.)
+install_rclone() {
+  RARCH=$([ "$ARCH" = aarch64 ] && echo arm64 || echo amd64)
+  Z="rclone-${RCLONE_VERSION}-linux-${RARCH}.zip"
+  T="$(mktemp -d)" || return 1
+  curl -fsSL -o "$T/$Z" "https://downloads.rclone.org/${RCLONE_VERSION}/$Z" &&
+    curl -fsSL "https://downloads.rclone.org/${RCLONE_VERSION}/SHA256SUMS" | grep "  $Z\$" | (cd "$T" && sha256sum -c --status -) &&
+    python3 -c 'import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extract(sys.argv[2], sys.argv[3])' "$T/$Z" "${Z%.zip}/rclone" "$T" &&
     install -D -m 0755 "$T/${Z%.zip}/rclone" "$RCLONE"
-  ) || echo "warning: could not install rclone; S3 mounts will be unavailable" >&2
+  rc=$?; rm -rf "$T"; return $rc
+}
+if [ ! -x "$RCLONE" ]; then
+  install_rclone || echo "warning: could not install rclone; S3 mounts will be unavailable" >&2
 fi
 
 # XFS with reflink so every sandbox disk is an O(1) copy-on-write clone.
