@@ -151,7 +151,7 @@ export function Cta() {
 
 export function Footer() {
   const cols = [
-    { h: "Product", l: [["Features", "/#features"], ["SDKs", "/#sdk"], ["Benchmarks", "/#benchmarks"], ["Pricing", "/pricing"], ["Dashboard", "/dashboard"]] },
+    { h: "Product", l: [["Features", "/#features"], ["SDKs", "/#sdk"], ["Benchmarks", "/#benchmarks"], ["Pricing", "/pricing"], ["Status", "/status"], ["Dashboard", "/dashboard"]] },
     { h: "Learn", l: [["Docs", "/docs"], ["Blog", "/blog"], ["Agent setup prompt", "/docs/agents"], ["How it works", "/#how"]] },
     { h: "Open source", l: [["GitHub", REPO], ["Releases", `${REPO}/releases`], ["Contributing", `${REPO}/blob/master/CONTRIBUTING.md`], ["Security", `${REPO}/blob/master/SECURITY.md`]] },
     { h: "Benchmarks", l: [["fairbench", `${REPO}/tree/master/bench/fair`], ["aisandboxbench results", `${REPO}/blob/master/results/aisandboxbench-2026-11-21.md`], ["aisandboxbench.com", "https://aisandboxbench.com"]] },
