@@ -88,11 +88,15 @@ class Jasmine:
     def templates(self) -> list:
         return self._request("GET", "/v1/templates")
 
-    def build_template(self, name: str, image: str, vcpus: int = 2, mem_mib: int = 1024, prewarm_mib: int = 256) -> dict:
-        return self._request(
-            "POST", "/v1/templates",
-            {"name": name, "image": image, "vcpus": vcpus, "mem_mib": mem_mib, "prewarm_mib": prewarm_mib},
-        )
+    def build_template(
+        self, name: str, image: str, vcpus: int = 2, mem_mib: int = 1024, prewarm_mib: int = 256,
+        setup: Optional[str] = None, start: Optional[str] = None, ready_port: Optional[int] = None,
+    ) -> dict:
+        """Build a template from an OCI image. `setup` runs once before the snapshot; `start` is left
+        running in it (every sandbox starts with it up), and the build waits for `ready_port`."""
+        body = {"name": name, "image": image, "vcpus": vcpus, "mem_mib": mem_mib, "prewarm_mib": prewarm_mib}
+        body.update({k: v for k, v in (("setup", setup), ("start", start), ("ready_port", ready_port)) if v is not None})
+        return self._request("POST", "/v1/templates", body)
 
 
 @dataclass
@@ -144,6 +148,14 @@ class Sandbox:
     def preview_url(self, port: int, path: str = "/") -> str:
         """URL that proxies to `port` inside the sandbox."""
         return f"{self.client.url}{self._base}/ports/{port}{path if path.startswith('/') else '/' + path}"
+
+    def cdp_url(self, port: int = 9222) -> str:
+        """WebSocket URL for the Chrome DevTools Protocol of a browser running in this sandbox (the
+        `browser` template has one on port 9222). Use it with Playwright's
+        `chromium.connect_over_cdp(url)`."""
+        v = self.client._request("GET", f"{self._base}/ports/{port}/json/version")
+        path = urllib.parse.urlparse(v["webSocketDebuggerUrl"]).path
+        return "ws" + self.preview_url(port, path)[len("http"):]
 
     def delete(self) -> None:
         try:

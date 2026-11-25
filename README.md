@@ -33,6 +33,27 @@ with Jasmine().create() as sbx:
 API: `POST /v1/sandboxes`, `POST /v1/sandboxes/{id}/exec`, `GET|PUT /v1/sandboxes/{id}/files?path=`,
 `DELETE /v1/sandboxes/{id}`, `GET|POST /v1/templates`. Optional bearer auth via `JASMINE_API_KEY`.
 
+## Browser sandboxes
+
+A template can leave a process running in its snapshot, so every sandbox starts with it already up. For a
+headless Chromium that means the DevTools Protocol answers the moment the sandbox exists, with no browser launch:
+
+```sh
+sudo jasmined build browser chromedp/headless-shell:stable --mem-mib 2048 --ready-port 9222 \
+  --start '/headless-shell/headless-shell --no-sandbox --disable-gpu --disable-dev-shm-usage --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --remote-allow-origins=* about:blank'
+```
+
+```ts
+import { chromium } from "playwright";
+const sbx = await new Jasmine().create({ template: "browser" });
+const browser = await chromium.connectOverCDP(await sbx.cdpUrl());   // WebSocket over the preview URL
+```
+
+`--setup '<cmd>'` runs a command once before the snapshot (install packages, warm caches); `--start` and
+`--ready-port` work with any server, not just browsers. Preview URLs pass WebSocket upgrades through, so CDP
+and dev-server hot reload work over them. CI builds this template and drives a page on every push
+([sdk/browser-smoke.mjs](sdk/browser-smoke.mjs)).
+
 ## fairbench: same machine, same image, same limits
 
 [fairbench](bench/fair) runs Jasmine, Docker (runc), gVisor and Kata Containers on **one host**, with the same

@@ -34,7 +34,33 @@ pub struct TemplateMeta {
     /// For snapshots: the sandbox it was taken from.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source_sandbox: Option<String>,
+    /// Command started in the background before the snapshot, so it is already
+    /// running in every sandbox (e.g. a headless browser).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    /// Port the start command listens on; the snapshot waits until it accepts connections.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ready_port: Option<u16>,
 }
+
+/// Optional build steps beyond "boot the image".
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct BuildOpts {
+    /// Shell command run once, to completion, before the snapshot (e.g. `apt-get install -y chromium`).
+    #[serde(default)]
+    pub setup: Option<String>,
+    /// Shell command started in the background before the snapshot. It is captured
+    /// running, so it is already up the moment a sandbox is created.
+    #[serde(default)]
+    pub start: Option<String>,
+    /// TCP port inside the guest that `start` listens on. The build waits for it.
+    #[serde(default)]
+    pub ready_port: Option<u16>,
+}
+
+/// How long a template build waits for `setup` to finish and for `ready_port` to open.
+const SETUP_TIMEOUT: Duration = Duration::from_secs(900);
+const READY_TIMEOUT: Duration = Duration::from_secs(120);
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CreateTimings {
@@ -189,9 +215,12 @@ impl Manager {
     }
 
     /// OCI image → ext4 rootfs → cold boot → snapshot. Requires root and `crane`.
-    pub async fn build_template(&self, name: &str, image: &str, vcpus: u32, mem_mib: u32, prewarm_mib: u32) -> Result<TemplateMeta> {
+    pub async fn build_template(&self, name: &str, image: &str, vcpus: u32, mem_mib: u32, prewarm_mib: u32, opts: BuildOpts) -> Result<TemplateMeta> {
         if !valid_name(name) {
             bail!("invalid template name");
+        }
+        if opts.ready_port.is_some() && opts.start.is_none() {
+            bail!("ready_port needs a start command");
         }
         let dir = self.template_dir(name);
         let _ = std::fs::remove_dir_all(&dir);
@@ -247,6 +276,41 @@ impl Manager {
             let agent = AgentClient::new(&dir);
             agent.wait_ready(Duration::from_secs(30)).await.with_context(|| format!("console: {}", vm.console_tail()))?;
             let boot_ms = t0.elapsed().as_millis() as u64;
+            let sh = |script: String, timeout: Duration| jasmine_proto::ExecRequest {
+                argv: vec!["/bin/sh".into(), "-c".into(), script],
+                timeout_ms: Some(timeout.as_millis() as u64),
+                ..Default::default()
+            };
+            if let Some(setup) = &opts.setup {
+                let out = agent.exec(sh(setup.clone(), SETUP_TIMEOUT), None).await?;
+                if out.exit_code != Some(0) {
+                    let why = if out.timed_out { "timed out".to_string() } else { format!("exit {:?}, signal {:?}", out.exit_code, out.signal) };
+                    bail!("setup failed ({why}):\n{}{}", tail(&out.stdout), tail(&out.stderr));
+                }
+            }
+            if let Some(start) = &opts.start {
+                // Detached in its own session with its output in a log, so it outlives this exec
+                // and is captured running by the snapshot.
+                let script = format!("cd /root 2>/dev/null || cd /; setsid sh -c {} </dev/null >/var/log/jasmine-start.log 2>&1 &", shell_quote_str(start));
+                let out = agent.exec(sh(script, Duration::from_secs(30)), None).await?;
+                if out.exit_code != Some(0) {
+                    bail!("start failed (exit {:?}): {}", out.exit_code, out.stderr.trim());
+                }
+            }
+            if let Some(port) = opts.ready_port {
+                let t = Instant::now();
+                loop {
+                    if agent.connect_port(port).await.is_ok() {
+                        break;
+                    }
+                    if t.elapsed() > READY_TIMEOUT {
+                        let log = agent.read_file("/var/log/jasmine-start.log").await.unwrap_or_default();
+                        bail!("nothing listening on port {port} after {}s; start log:\n{}", READY_TIMEOUT.as_secs(), tail(&String::from_utf8_lossy(&log)));
+                    }
+                    tokio::time::sleep(Duration::from_millis(250)).await;
+                }
+                tracing::info!(template = name, port, "start command ready in {:.1}s", t.elapsed().as_secs_f64());
+            }
             if prewarm_mib > 0 {
                 let out = agent
                     .exec(
@@ -278,6 +342,8 @@ impl Manager {
             vcpus,
             mem_mib,
             prewarm_mib,
+            start: opts.start.clone(),
+            ready_port: opts.ready_port,
             rootfs_bytes: used,
             boot_ms,
             built_unix: now_ns() / 1_000_000_000,
@@ -663,4 +729,15 @@ fn go_arch() -> &'static str {
     } else {
         "amd64"
     }
+}
+
+fn shell_quote_str(s: &str) -> String {
+    format!("'{}'", s.replace('\'', "'\\''"))
+}
+
+/// Last ~2 KB of command output, for error messages.
+fn tail(s: &str) -> String {
+    let start = s.len().saturating_sub(2048);
+    let start = (start..=s.len()).find(|&i| s.is_char_boundary(i)).unwrap_or(s.len());
+    s[start..].to_string()
 }

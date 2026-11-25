@@ -121,13 +121,29 @@ export class Jasmine {
   }
 
   /** Build a template from an OCI image (boots it once and snapshots it). */
-  async buildTemplate(opts: { name: string; image: string; vcpus?: number; memMib?: number; prewarmMib?: number }): Promise<TemplateInfo> {
+  /**
+   * `setup` runs once before the snapshot; `start` is left running in it (every sandbox starts with it up),
+   * and the build waits for `readyPort` to accept connections.
+   */
+  async buildTemplate(opts: {
+    name: string;
+    image: string;
+    vcpus?: number;
+    memMib?: number;
+    prewarmMib?: number;
+    setup?: string;
+    start?: string;
+    readyPort?: number;
+  }): Promise<TemplateInfo> {
     return this.request("POST", "/v1/templates", {
       name: opts.name,
       image: opts.image,
       vcpus: opts.vcpus,
       mem_mib: opts.memMib,
       prewarm_mib: opts.prewarmMib,
+      setup: opts.setup,
+      start: opts.start,
+      ready_port: opts.readyPort,
     });
   }
 }
@@ -193,6 +209,16 @@ export class Sandbox {
   /** URL that proxies to `port` inside the sandbox. */
   previewUrl(port: number, path = "/"): string {
     return `${this.client.url}${this.base}/ports/${port}${path.startsWith("/") ? path : `/${path}`}`;
+  }
+
+  /**
+   * WebSocket URL for the Chrome DevTools Protocol of a browser running in this sandbox (the `browser`
+   * template has one on port 9222). Use it with Playwright `chromium.connectOverCDP(url)` or
+   * Puppeteer `puppeteer.connect({ browserWSEndpoint: url })`.
+   */
+  async cdpUrl(port = 9222): Promise<string> {
+    const v = await this.client.request("GET", `${this.base}/ports/${port}/json/version`);
+    return this.previewUrl(port, new URL(v.webSocketDebuggerUrl).pathname).replace(/^http/, "ws");
   }
 
   async delete(): Promise<void> {

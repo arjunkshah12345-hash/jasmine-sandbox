@@ -45,6 +45,11 @@ jobs:
           (cd sdk/typescript && npm install --silent --no-audit --no-fund && npm run --silent build)
           node sdk/smoke.mjs
           python3 sdk/smoke.py
+      - name: Browser template (Chromium captured running; CDP over the preview URL)
+        run: |
+          time sudo jasmined build browser chromedp/headless-shell:stable --mem-mib 2048 --ready-port 9222 \
+            --start '/headless-shell/headless-shell --no-sandbox --disable-gpu --disable-dev-shm-usage --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --remote-allow-origins=* about:blank'
+          node sdk/browser-smoke.mjs
       - name: Cross-provider comparison (providers without secrets are skipped)
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
