@@ -63,11 +63,11 @@ jobs:
             ns=$(sudo ip netns list | awk '{print $1}' | grep '^wrn' | sort -V | head -1); k=${ns#wrn}
             hip=$(sudo ip -6 -o addr show dev wrv$k scope global | awk '{print $4}' | cut -d/ -f1)
             sudo sysctl net.ipv6.conf.wrv$k.forwarding net.ipv6.conf.inet6h.forwarding net.ipv6.conf.default.forwarding
-            sudo timeout 6 tcpdump -lni wrv$k -c 12 ip6 &
+            sudo timeout 8 tcpdump -lni wrv$k -c 12 ip6 & tpid=$!
             sleep 1
             sudo ip netns exec $ns ping -6 -c2 -W2 $hip || true
             sudo ip netns exec $ns ping -6 -c2 -W2 2001:db8:6a73::2 || true
-            wait
+            wait $tpid || true
             sudo ip netns exec $ns ip -6 neigh; sudo ip -6 neigh show dev wrv$k
             sudo ip netns exec $ns nstat -az | grep -E 'Ip6(Out|In)(NoRoutes|Discards|Requests|AddrErrors)|Icmp6OutDestUnreachs' || true
             sudo nstat -az | grep -E 'Ip6(Out|In)(NoRoutes|Discards|Requests|AddrErrors|ForwDatagrams)|Icmp6OutDestUnreachs' || true
