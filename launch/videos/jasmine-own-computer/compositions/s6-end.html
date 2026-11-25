@@ -1,0 +1,68 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    @font-face { font-family: "Geist Mono"; src: url("assets/fonts/GeistMono.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #070807; font-family: "Geist", sans-serif; color: #f4f5f0; }
+    #e-lock { position: absolute; left: 0; right: 0; top: 300px; display: flex; justify-content: center; align-items: center; gap: 34px; }
+    #e-m { width: 160px; height: 160px; overflow: visible; }
+    #e-w { font-size: 170px; font-weight: 600; letter-spacing: -0.055em; line-height: 1; padding-bottom: 14px; white-space: pre; }
+    #e-line { position: absolute; left: 0; right: 0; top: 560px; text-align: center; font-size: 66px; font-weight: 500; letter-spacing: -0.03em; color: #c9cec3; white-space: pre; }
+    #e-line b { color: #a6e86b; font-weight: 600; }
+    #e-url { position: absolute; left: 0; right: 0; top: 690px; text-align: center; }
+    #e-url span { display: inline-block; padding: 16px 40px; border-radius: 999px; border: 2px solid rgba(166,232,107,.4); background: #0d0f0c; font-family: "Geist Mono", monospace; font-size: 48px; color: #f4f5f0; }
+    /* the odd little thing at the end: a kid in a literal sandbox */
+    #kid-wrap { position: absolute; left: 1520px; top: 790px; width: 360px; height: 300px; overflow: visible; transform-origin: 50% 100%; scale: 1.15; }
+    #kid-svg { position: absolute; inset: 0; width: 360px; height: 300px; overflow: visible; }
+    #kid-bub { position: absolute; left: 30px; top: -40px; padding: 10px 26px 14px; border-radius: 26px; background: #f4f5f0; color: #0b1006; font-size: 54px; font-weight: 600; letter-spacing: -0.03em; opacity: 0; }
+    #kid-bub::after { content: ""; position: absolute; left: 70px; bottom: -16px; border: 10px solid transparent; border-top: 12px solid #f4f5f0; border-left-width: 6px; }
+  </style>
+  <div id="root" data-composition-id="s6" data-width="1920" data-height="1080" data-layout-allow-overlap>
+    <div id="e-lock"><svg id="e-m" viewBox="0 0 24 24"><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><circle class="ctr" cx="12" cy="12" r="1.7" fill="#a6e86b"/></svg><div id="e-w">Jasmine</div></div>
+    <div id="e-line">Give your agents <b>their own computer.</b></div>
+    <div id="e-url"><span>tryjasmine.dev</span></div>
+    <div id="kid-wrap">
+      <svg id="kid-svg" viewBox="0 0 360 300">
+        <!-- back of the box and the sand -->
+        <g id="box-back"><path d="M40 190 L320 190 L300 160 L60 160 Z" fill="#6e4523"/><ellipse cx="180" cy="190" rx="140" ry="16" fill="#e2c07d"/></g>
+        <!-- the kid (rises out of the sand; clipped so it is only ever seen above the sand) -->
+        <clipPath id="above-sand"><rect x="0" y="-200" width="360" height="400"/></clipPath>
+        <g clip-path="url(#above-sand)"><g id="kid">
+          <rect x="138" y="128" width="84" height="70" rx="26" fill="#a6e86b"/>
+          <g id="arm"><rect x="208" y="134" width="20" height="60" rx="10" fill="#f2c9a0" transform="rotate(-150 218 140)"/></g>
+          <rect x="132" y="140" width="20" height="50" rx="10" fill="#f2c9a0" transform="rotate(20 142 144)"/>
+          <circle cx="180" cy="98" r="44" fill="#f2c9a0"/>
+          <path d="M136 92 Q140 50 182 52 Q224 54 224 94 Q210 72 182 74 Q156 72 136 92 Z" fill="#3b2a1e"/>
+          <circle cx="164" cy="100" r="5" fill="#1b140f"/><circle cx="196" cy="100" r="5" fill="#1b140f"/>
+          <path d="M166 116 Q180 128 194 116" stroke="#1b140f" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+          <circle cx="154" cy="114" r="6" fill="#f0a3a3" opacity=".7"/><circle cx="206" cy="114" r="6" fill="#f0a3a3" opacity=".7"/>
+        </g></g>
+        <!-- the front of the box hides the kid until it pops up -->
+        <g id="box-front">
+          <path d="M28 196 L332 196 L318 262 L42 262 Z" fill="#8a5a2b"/>
+          <path d="M28 196 L332 196 L330 208 L30 208 Z" fill="#a06a35"/>
+          <rect x="72" y="150" width="10" height="56" rx="4" fill="#9aa3ad" transform="rotate(-18 77 178)"/><path d="M58 142 L86 136 L84 158 L64 162 Z" fill="#c0c7cf" transform="rotate(-18 77 150)"/>
+          <path d="M256 166 L296 166 L290 198 L262 198 Z" fill="#f0b7cc"/><path d="M262 166 Q276 146 290 166" stroke="#f0b7cc" stroke-width="4" fill="none"/>
+        </g>
+      </svg>
+      <div id="kid-bub">hi!</div>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      // the flower blooms (boom), the wordmark wipes in beside it
+      gsap.utils.toArray("#e-m .pt").forEach((p, i) => tl.fromTo(p, { rotation: i * 72 - 140, scale: 0, svgOrigin: "12 12" }, { rotation: i * 72, scale: 1, svgOrigin: "12 12", duration: 0.7, ease: "expo.out", immediateRender: true }, 0.05 + i * 0.04));
+      tl.fromTo("#e-m .ctr", { scale: 0, svgOrigin: "12 12" }, { scale: 1, svgOrigin: "12 12", duration: 0.45, ease: "back.out(2.4)", immediateRender: true }, 0.3);
+      tl.fromTo("#e-w", { clipPath: "inset(0 100% 0 0)", x: -30 }, { clipPath: "inset(0 0% 0 0)", x: 0, duration: 0.6, ease: "expo.out", immediateRender: true }, 0.4);
+      tl.fromTo("#e-line", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out", immediateRender: true }, 0.8);
+      tl.fromTo("#e-url", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out", immediateRender: true }, 1.1);
+      // ...and then, at the bottom right, a sandbox slides in and a kid pops out of it (boing) and says hi
+      tl.fromTo("#kid-wrap", { y: 330 }, { y: 0, duration: 0.45, ease: "back.out(1.4)", immediateRender: true }, 1.5);
+      tl.fromTo("#kid", { y: 150 }, { y: 0, duration: 0.35, ease: "back.out(2.6)", immediateRender: true }, 1.95);
+      tl.fromTo("#arm", { rotation: 0, svgOrigin: "218 140" }, { rotation: 34, svgOrigin: "218 140", duration: 0.14, yoyo: true, repeat: 9, ease: "sine.inOut", immediateRender: true }, 2.25);
+      tl.fromTo("#kid-bub", { opacity: 0, scale: 0.4, transformOrigin: "30% 100%" }, { opacity: 1, scale: 1, duration: 0.25, ease: "back.out(2.4)", immediateRender: true }, 2.3);
+      window.__timelines["s6"] = tl;
+    })();
+  </script>
+</template>

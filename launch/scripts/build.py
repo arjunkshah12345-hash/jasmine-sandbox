@@ -49,6 +49,42 @@ SCRIPTS = {
             ], None),
         ],
     },
+    "jasmine-hook": {
+        "title": "Jasmine · Talking-head launch (hook first)",
+        "sub": "About a minute. A founder demo: you on camera, cutting to your screen. The first 3 seconds decide whether anyone stays, so start mid-problem, never with a logo or a hello. Every word should make sense to a 5-year-old.",
+        "beats": [
+            ("Hook · 0–3 s", "Close-up. Turn your laptop to the camera on the first word.", [
+                "This is what happens when you let an AI agent run code on your laptop.",
+            ], "Cut to the chat: the agent types $ rm -rf ~/ and files start disappearing. Record scratch. (The opening of launch/videos/jasmine-own-computer.)"),
+            ("The problem", "Medium, back on you", [
+                "AI agents write a lot of code. That code has to run somewhere.",
+                "Your laptop is scary. And most cloud sandboxes make your agent sit there and wait.",
+            ], "A spinner next to the word \u201cwait\u201d"),
+            ("Who", "Medium", [
+                "I'm [your name], I'm 14, and I built <b>Jasmine</b>.",
+            ], "Lower third: your name · built Jasmine. (Drop \u201cI'm 14\u201d if you'd rather.)"),
+            ("One core feature", "Close-up. Slow down.", [
+                "Jasmine gives every AI agent <b>its own little computer</b>.",
+                "And it's ready in <b>a tenth of a second</b>.",
+            ], "The race from the launch film: Jasmine finishes while the others are still loading"),
+            ("Show it", "Screen recording, your face small in the corner", [
+                "Watch. I ask for one, and it's already running. I can pause it, copy it, and throw it away.",
+            ], "Screen recording: create a sandbox, run one command, then pause and fork it. Keep it under 8 seconds."),
+            ("A little spicy", "Back to camera. Say it plainly.", [
+                "I tested it against thirteen sandbox companies, with their own benchmark. Jasmine came first on twelve of twenty-five tests.",
+                "Some of those companies raised millions. I'm in ninth grade.",
+            ], "social/card-1.png, the scorecard. Keep the footnote on screen: self-run, not an official listing."),
+            ("Free", "Medium", [
+                "It's open source. One command puts it on your own server, or use Jasmine Cloud and get <b>two dollars free</b>.",
+            ], "The real tryjasmine.dev: the cursor clicks copy on the install command"),
+            ("Close", "Close-up. Smile.", [
+                "Give your agent its own computer. <b>tryjasmine.dev</b>.",
+            ], None),
+            ("The odd ending", "Hold on camera for 2 seconds, saying nothing", [
+                "(No line. A friend or sibling pops up at the bottom of the frame holding a toy shovel, says \u201chi\u201d, and ducks out.)",
+            ], "Don't explain it. People reply to ask why, and replies push the post further."),
+        ],
+    },
     "jasmine-cloud": {
         "title": "Jasmine Cloud · Launch video",
         "sub": "One take, outdoors, about 55 seconds. Frame yourself centred, chest up, with sky or open space around your head: the captions sit beside and behind you. Talk it, don't recite it. The edit adds everything in \u201cOn screen\u201d.",

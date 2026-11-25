@@ -1,0 +1,31 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #070807; font-family: "Geist", sans-serif; color: #f4f5f0; }
+    .ln { position: absolute; left: 0; right: 0; top: 440px; text-align: center; font-size: 150px; font-weight: 600; letter-spacing: -0.05em; line-height: 1; padding-bottom: 24px; white-space: pre; clip-path: inset(0 0 100% 0); }
+    .ln .d { color: #6b7068; }
+    .ln .b { color: #f0b7cc; display: inline-block; }
+    #s2-spin { display: inline-block; width: 96px; height: 96px; margin-left: 30px; vertical-align: -6px; border-radius: 50%; border: 12px solid rgba(244,245,240,.15); border-top-color: #f4f5f0; }
+  </style>
+  <div id="root" data-composition-id="s2" data-width="1920" data-height="1080">
+    <div id="l1" class="ln">AI agents write code.</div>
+    <div id="l2" class="ln" style="font-size:132px">That code has to run <span class="d">somewhere.</span></div>
+    <div id="l3" class="ln">Your laptop? <span id="b3" class="b">Scary.</span></div>
+    <div id="l4" class="ln">Someone's cloud? <span id="b4" class="b">Slow.</span><span id="s2-spin"></span></div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      // one line at a time, rising in on the beat and leaving upward
+      [["#l1", 0.0, 1.45], ["#l2", 1.5, 3.35], ["#l3", 3.4, 4.9], ["#l4", 4.95, 6.7]].forEach(([id, a, b]) => {
+        tl.fromTo(id, { clipPath: "inset(0 0 100% 0)", y: 90 }, { clipPath: "inset(0 0 0% 0)", y: 0, duration: 0.42, ease: "expo.out", immediateRender: false }, a);
+        tl.to(id, { clipPath: "inset(100% 0 0 0)", y: -70, duration: 0.25, ease: "power3.in" }, b - 0.25);
+      });
+      // the second word lands a beat later, with its pop
+      tl.fromTo("#b3", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)", immediateRender: true }, 3.95);
+      tl.fromTo("#b4", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)", immediateRender: true }, 5.5);
+      tl.fromTo("#s2-spin", { opacity: 0, rotation: 0 }, { opacity: 1, rotation: 900, duration: 1.2, ease: "none", immediateRender: true }, 5.5);
+      window.__timelines["s2"] = tl;
+    })();
+  </script>
+</template>
