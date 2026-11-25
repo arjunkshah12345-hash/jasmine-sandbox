@@ -1,0 +1,39 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    @font-face { font-family: "Geist Mono"; src: url("assets/fonts/GeistMono.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #070807; font-family: "Geist", sans-serif; }
+    /* the real tryjasmine.dev hero (captured), with the cursor and the copy state living on the page */
+    #s5-page { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    #s5-page img { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+    #s5-copied { position: absolute; left: 1150px; top: 614px; width: 58px; height: 24px; background: #0e190d; font-family: "Geist Mono", monospace; font-size: 13px; line-height: 24px; color: #a6e86b; text-align: right; opacity: 0; }
+    #s5-cur { position: absolute; left: 0; top: 0; width: 40px; height: 40px; overflow: visible; }
+    #s5-cap { position: absolute; left: 0; right: 0; top: 860px; text-align: center; opacity: 0; }
+    #s5-cap span { display: inline-block; padding: 18px 44px 26px; border-radius: 999px; background: rgba(7,8,7,.82); border: 2px solid rgba(244,245,240,.12); font-size: 76px; font-weight: 600; letter-spacing: -0.04em; color: #f4f5f0; }
+    #s5-cap b { color: #a6e86b; font-weight: 600; }
+  </style>
+  <div id="root" data-composition-id="s5" data-width="1920" data-height="1080">
+    <div id="s5-page">
+      <img src="assets/site-hero.png" alt="tryjasmine.dev" />
+      <div id="s5-copied" data-layout-ignore>copied</div>
+      <svg id="s5-cur" viewBox="0 0 24 24"><path d="M4 2 L4 20 L9 15.5 L12.5 22 L15.5 20.6 L12 14 L19 14 Z" fill="#fff" stroke="#0b0c0b" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    </div>
+    <div id="s5-cap"><span>Free and open source. <b>One command.</b></span></div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      // the page rises in, then the camera pushes into the install command (it ends centred at 1.9x)
+      tl.fromTo("#s5-page", { y: 140, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "expo.out", immediateRender: true }, 0);
+      tl.to("#s5-page", { scale: 1.9, y: -86, transformOrigin: "960px 626px", duration: 0.9, ease: "power3.inOut" }, 0.6);
+      // the cursor comes in from the lower right and clicks "copy"
+      tl.fromTo("#s5-cur", { x: 1500, y: 860, opacity: 0 }, { x: 1168, y: 622, opacity: 1, duration: 0.9, ease: "power3.out", immediateRender: true }, 1.35);
+      tl.to("#s5-cur", { scale: 0.82, duration: 0.07, yoyo: true, repeat: 1, ease: "power2.out", transformOrigin: "20% 10%" }, 2.4);
+      tl.set("#s5-copied", { opacity: 1 }, 2.42);
+      // the line reads over the push
+      tl.fromTo("#s5-cap", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out", immediateRender: true }, 0.75);
+      tl.to(["#s5-cap", "#s5-page"], { opacity: 0, duration: 0.25, ease: "power2.in" }, 3.8);
+      window.__timelines["s5"] = tl;
+    })();
+  </script>
+</template>

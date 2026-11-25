@@ -1,0 +1,58 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    @font-face { font-family: "Geist Mono"; src: url("assets/fonts/GeistMono.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #070807; font-family: "Geist", sans-serif; color: #f4f5f0; }
+    /* a generic agent chat, filling the frame */
+    #s1-cam { position: absolute; inset: 0; transform-origin: 960px 700px; }
+    #s1-win { position: absolute; left: 110px; top: 40px; width: 1700px; height: 1000px; border-radius: 30px; background: #0f110e;
+      border: 2px solid rgba(244,245,240,.09); box-shadow: 0 40px 90px rgba(0,0,0,.6); overflow: hidden; }
+    #s1-bar { height: 96px; display: flex; align-items: center; gap: 18px; padding: 0 44px; border-bottom: 2px solid rgba(244,245,240,.06); font-size: 36px; font-weight: 500; color: #8a8f85; }
+    #s1-bar b { color: #f4f5f0; font-weight: 600; }
+    .row { position: absolute; left: 50px; right: 50px; display: flex; gap: 22px; align-items: flex-start; }
+    .row.me { justify-content: flex-end; }
+    .av { width: 92px; height: 92px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 34px; font-weight: 600; }
+    .av.ai { background: #22261f; color: #c9cec3; border: 2px solid rgba(244,245,240,.12); }
+    .bub { padding: 24px 38px; border-radius: 32px; font-size: 66px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; background: #1b1e19; max-width: 1420px; }
+    .me .bub { background: #f4f5f0; color: #0b1006; font-weight: 600; }
+    .code { font-family: "Geist Mono", monospace; font-size: 64px; background: #070807; color: #f0b7cc; border: 2px solid rgba(240,183,204,.35); }
+    #s1-prog { margin-top: 20px; height: 16px; border-radius: 6px; background: rgba(244,245,240,.1); overflow: hidden; }
+    #s1-prog i { display: block; height: 100%; width: 100%; background: #f0b7cc; transform-origin: 0 50%; }
+    #s1-flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+  </style>
+  <div id="root" data-composition-id="s1" data-width="1920" data-height="1080">
+    <div id="s1-cam">
+      <div id="s1-win">
+        <div id="s1-bar"><b>your AI agent</b> · ~/my-app</div>
+        <div id="r1" class="row" style="top:140px"><div class="av ai">AI</div><div class="bub">Cleaning up your project…</div></div>
+        <div id="r2" class="row" style="top:310px"><div class="av ai">AI</div><div class="bub code">$ rm -rf ~/</div></div>
+        <div id="r3" class="row" style="top:480px"><div class="av ai">AI</div><div class="bub">Deleting <span id="s1-n">0</span> files…<div id="s1-prog"><i></i></div></div></div>
+        <div id="r4" class="row me" style="top:640px"><div class="bub" style="font-size:104px;padding:20px 56px">WAIT</div></div>
+        <div id="r5" class="row me" style="top:800px"><div class="bub" style="font-size:80px">STOP STOP STOP</div></div>
+      </div>
+    </div>
+    <div id="s1-flash"></div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      // r1 is up on frame 0 (it is the thumbnail); the rest pop in on the beat
+      const pop = (id, at, from = 0.6) => tl.fromTo(id, { opacity: 0, scale: from, transformOrigin: id === "#r4" || id === "#r5" ? "100% 50%" : "0% 50%" },
+        { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2.2)", immediateRender: true }, at);
+      pop("#r2", 0.6); pop("#r3", 1.25); pop("#r4", 1.9, 0.4); pop("#r5", 2.25, 0.5);
+      // the file counter races up while the bar fills
+      const n = document.getElementById("s1-n"), c = { v: 0 };
+      tl.fromTo(c, { v: 0 }, { v: 14382, duration: 1.1, ease: "power1.in", immediateRender: false, onUpdate: () => (n.textContent = Math.round(c.v).toLocaleString("en-US")) }, 1.3);
+      tl.fromTo("#s1-prog i", { scaleX: 0 }, { scaleX: 0.72, duration: 1.1, ease: "power1.in", immediateRender: true }, 1.3);
+      // the camera leans in as it gets worse
+      tl.fromTo("#s1-cam", { scale: 1 }, { scale: 1.04, duration: 2.4, ease: "power1.in", immediateRender: true }, 0);
+      // the record scratch: freeze, a white flash, a hard shake
+      tl.to("#s1-flash", { opacity: 0.55, duration: 0.04 }, 2.45);
+      tl.to("#s1-flash", { opacity: 0, duration: 0.25, ease: "power2.out" }, 2.49);
+      [[-26, 10], [22, -8], [-14, 6], [8, -3], [0, 0]].forEach(([x, y], i) => tl.to("#s1-cam", { x, y, duration: 0.04, ease: "none" }, 2.45 + i * 0.04));
+      tl.to("#root", { opacity: 0, duration: 0.15, ease: "power2.in" }, 3.2);
+      window.__timelines["s1"] = tl;
+    })();
+  </script>
+</template>

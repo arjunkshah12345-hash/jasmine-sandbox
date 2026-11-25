@@ -1,0 +1,68 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    @font-face { font-family: "Geist Mono"; src: url("assets/fonts/GeistMono.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #070807; font-family: "Geist", sans-serif; color: #f4f5f0; }
+    .hd { position: absolute; left: 150px; right: 150px; top: 96px; font-size: 92px; font-weight: 600; letter-spacing: -0.045em; line-height: 1; padding-bottom: 20px; white-space: pre; clip-path: inset(0 0 100% 0); }
+    .hd .l { color: #a6e86b; }
+    #slo { position: absolute; right: 150px; top: 116px; font-family: "Geist Mono", monospace; font-size: 30px; color: #8a8f85; padding: 10px 20px; border: 2px solid rgba(244,245,240,.14); border-radius: 999px; opacity: 0; }
+    .lane { position: absolute; left: 150px; right: 150px; height: 120px; display: grid; grid-template-columns: 300px 1fr 260px; align-items: center; border-top: 2px solid rgba(244,245,240,.07); opacity: 0; }
+    .lane .n { font-size: 52px; font-weight: 600; letter-spacing: -0.03em; color: #b4b9ae; }
+    .lane .tr { position: relative; height: 56px; border-radius: 12px; background: rgba(244,245,240,.05); overflow: hidden; }
+    .lane .b { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; border-radius: 12px; background: #3a3f37; transform-origin: 0 50%; transform: scaleX(0); }
+    .lane .tm { text-align: right; font-family: "Geist Mono", monospace; font-size: 52px; letter-spacing: -0.03em; color: #8a8f85; font-variant-numeric: tabular-nums; }
+    .lane.me .n { color: #f4f5f0; }
+    .lane.me .b { background: #a6e86b; }
+    .lane.done .tm { color: #f4f5f0; }
+    .lane.me.done .tm { color: #a6e86b; }
+    #foot { position: absolute; left: 150px; right: 150px; bottom: 56px; font-size: 24px; color: #6b7068; line-height: 1.4; opacity: 0; }
+  </style>
+  <div id="root" data-composition-id="s4" data-width="1920" data-height="1080">
+    <div id="h1" class="hd"><span class="l">Jasmine:</span> a tenth of a second.</div>
+    <div id="h2" class="hd">The others? Up to 12× slower.</div>
+    <div id="slo">4× slow motion</div>
+    <div id="ln0" class="lane me" style="top:330px"><span class="n">Jasmine</span><div class="tr"><div class="b"></div></div><span class="tm">0 ms</span></div>
+    <div id="ln1" class="lane" style="top:470px"><span class="n">Modal</span><div class="tr"><div class="b"></div></div><span class="tm">0 ms</span></div>
+    <div id="ln2" class="lane" style="top:610px"><span class="n">E2B</span><div class="tr"><div class="b"></div></div><span class="tm">0 ms</span></div>
+    <div id="ln3" class="lane" style="top:750px"><span class="n">Daytona</span><div class="tr"><div class="b"></div></div><span class="tm">0 ms</span></div>
+    <div id="foot" data-layout-ignore>Median time from asking for a sandbox to its first command. Jasmine: self-run on aisandboxbench's open-source harness, 4 vCPU / 8 GB, Nov 21 2026. Others: their published results on the same harness. Shown 4× slower than real time.</div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      const START = 0.8, SLOW = 4; // race starts 0.8 s into the scene, shown 4x slower
+      const V = [0.100, 0.376, 0.793, 1.25]; // seconds, as published on tryjasmine.dev
+      const lanes = [0, 1, 2, 3].map((i) => document.getElementById("ln" + i));
+      const fmt = (s) => (s < 1 ? `${Math.round(s * 1000)} ms` : `${s.toFixed(2)} s`);
+      const clock = { t: 0 };
+      const paint = () => {
+        const real = Math.max(0, (clock.t - START) / SLOW);
+        lanes.forEach((ln, i) => {
+          const p = Math.min(1, real / V[i]);
+          ln.querySelector(".b").style.transform = `scaleX(${p})`;
+          ln.querySelector(".tm").textContent = fmt(Math.min(real, V[i]));
+          ln.classList.toggle("done", real >= V[i]);
+        });
+      };
+      paint();
+      tl.fromTo(clock, { t: 0 }, { t: 8.3, duration: 8.3, ease: "none", onUpdate: paint, immediateRender: false }, 0);
+
+      // lanes and the slow-motion tag settle in before the start
+      lanes.forEach((ln, i) => tl.fromTo(ln, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out", immediateRender: true }, 0.05 + i * 0.07));
+      tl.fromTo("#slo", { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: true }, 0.4);
+      tl.fromTo("#foot", { opacity: 0 }, { opacity: 1, duration: 0.4, immediateRender: true }, 0.6);
+      // finish pops (the sounds sit on these frames)
+      V.forEach((v, i) => tl.fromTo(lanes[i].querySelector(".tm"), { scale: 1 }, { scale: i === 0 ? 1.25 : 1.1, duration: 0.1, yoyo: true, repeat: 1, ease: "power2.out", immediateRender: false, transformOrigin: "100% 50%" }, START + v * SLOW));
+
+      // headline swaps
+      const H = [["#h1", START + V[0] * SLOW + 0.05, 5.95], ["#h2", 6.0, 8.35]];
+      H.forEach(([id, a, b]) => {
+        tl.fromTo(id, { clipPath: "inset(0 0 100% 0)", y: 50 }, { clipPath: "inset(0 0 0% 0)", y: 0, duration: 0.4, ease: "expo.out", immediateRender: false }, a);
+        if (b < 8.3) tl.to(id, { clipPath: "inset(100% 0 0 0)", y: -40, duration: 0.2, ease: "power3.in" }, b - 0.2);
+      });
+      tl.to("#root", { opacity: 0, duration: 0.2, ease: "power2.in" }, 8.05);
+      window.__timelines["s4"] = tl;
+    })();
+  </script>
+</template>
