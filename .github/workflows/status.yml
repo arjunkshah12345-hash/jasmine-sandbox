@@ -1,0 +1,56 @@
+name: status
+# Public uptime record for Jasmine Cloud: every 10 minutes, create a sandbox, run a command and
+# delete it through the public API (bench/status/probe.mjs). Results go to the `status` branch
+# (checks.json, summary.json), which tryjasmine.dev/status reads. Needs the repository secret
+# JASMINE_STATUS_KEY (a Jasmine Cloud API key); until it's set, runs skip.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: status
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Skip without a key
+        id: key
+        env:
+          KEY: ${{ secrets.JASMINE_STATUS_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then echo "JASMINE_STATUS_KEY is not set; skipping"; echo "have=no" >> "$GITHUB_OUTPUT"; else echo "have=yes" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.have == 'yes'
+      - name: Check out the status branch
+        if: steps.key.outputs.have == 'yes'
+        run: |
+          git config --global user.name "jasmine-status"
+          git config --global user.email "status@users.noreply.github.com"
+          if git ls-remote --exit-code origin status >/dev/null; then
+            git clone -q --depth 1 --branch status "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" status-data
+          else
+            mkdir status-data && cd status-data && git init -q -b status && git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+            printf '# Jasmine Cloud status data\n\nWritten every 10 minutes by .github/workflows/status.yml on master. Shown at https://tryjasmine.dev/status.\n' > README.md
+          fi
+      - name: Probe
+        if: steps.key.outputs.have == 'yes'
+        env:
+          JASMINE_URL: https://api.tryjasmine.dev
+          JASMINE_API_KEY: ${{ secrets.JASMINE_STATUS_KEY }}
+        run: node bench/status/probe.mjs status-data
+      - name: Publish
+        if: steps.key.outputs.have == 'yes'
+        run: |
+          # One commit, replaced each time: checks.json already holds the 90-day history.
+          cd status-data
+          git checkout -q --orphan snapshot
+          git add -A
+          git commit -q -m "status $(date -u +%FT%TZ)"
+          git push -q -f origin snapshot:status
