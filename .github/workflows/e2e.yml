@@ -45,6 +45,18 @@ jobs:
           (cd sdk/typescript && npm install --silent --no-audit --no-fund && npm run --silent build)
           node sdk/smoke.mjs
           python3 sdk/smoke.py
+      - name: S3 mounts (against an S3 server in its own network namespace)
+        run: |
+          # rclone serve s3 stands in for S3, reached through the host like the internet.
+          sudo ip netns add s3
+          sudo ip link add s3h type veth peer name s3n netns s3
+          sudo ip addr add 10.99.0.1/30 dev s3h && sudo ip link set s3h up
+          sudo ip -n s3 addr add 10.99.0.2/30 dev s3n && sudo ip -n s3 link set s3n up && sudo ip -n s3 link set lo up
+          sudo ip -n s3 route add default via 10.99.0.1
+          sudo mkdir -p /tmp/s3data/jasmine-test && echo "hello from s3" | sudo tee /tmp/s3data/jasmine-test/hello.txt >/dev/null
+          sudo ip netns exec s3 sh -c 'nohup /usr/local/lib/jasmine/rclone serve s3 /tmp/s3data --addr 10.99.0.2:9000 --auth-key jasmine,jasmine-secret >/tmp/s3serve.log 2>&1 &'
+          for i in $(seq 40); do curl -s -o /dev/null http://10.99.0.2:9000/ && break; sleep 0.25; done
+          S3_ENDPOINT=http://10.99.0.2:9000 S3_KEY=jasmine S3_SECRET=jasmine-secret node sdk/s3-smoke.mjs || { sudo tail -30 /tmp/s3serve.log; curl -s -X POST localhost:7171/v1/sandboxes -d '{}' -H 'content-type: application/json' | python3 -c 'import json,sys,urllib.request as u; i=json.load(sys.stdin)["id"]; r=u.Request(f"http://localhost:7171/v1/sandboxes/{i}/exec", json.dumps({"cmd": "ls -l /dev/fuse /usr/local/bin/fuser* /.jasmine; grep -i fuse /proc/filesystems /proc/misc"}).encode(), {"content-type": "application/json"}); print(u.urlopen(r).read().decode())'; exit 1; }
       - name: Outbound IPv6 (through a stand-in IPv6 internet; the host stays unreachable)
         run: |
           sudo ip netns add inet6

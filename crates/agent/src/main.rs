@@ -9,6 +9,7 @@
 #[cfg(not(target_os = "linux"))]
 compile_error!("jasmine-agent only runs inside a Linux guest");
 
+mod fuse;
 mod handlers;
 mod sys;
 
@@ -19,6 +20,13 @@ use std::time::Instant;
 pub static mut BOOT: Option<Instant> = None;
 
 fn main() {
+    // Also installed as /usr/local/bin/fusermount{,3} (see fuse.rs).
+    let args: Vec<String> = std::env::args().collect();
+    if let Some(n) = args.first().and_then(|a| std::path::Path::new(a).file_name()).and_then(|n| n.to_str()) {
+        if n == "fusermount" || n == "fusermount3" {
+            std::process::exit(fuse::main(&args));
+        }
+    }
     // SAFETY: single-threaded at this point.
     unsafe { BOOT = Some(Instant::now()) };
     if std::process::id() == 1 {

@@ -145,6 +145,26 @@ class Sandbox:
         """Snapshot this sandbox into a new template; Jasmine().create(template=t["name"]) starts copies."""
         return self.client._request("POST", f"{self._base}/snapshot")
 
+    def mount_s3(
+        self, bucket: str, path: Optional[str] = None, prefix: Optional[str] = None,
+        endpoint: Optional[str] = None, region: Optional[str] = None,
+        access_key_id: Optional[str] = None, secret_access_key: Optional[str] = None,
+        session_token: Optional[str] = None, read_only: bool = False,
+    ) -> str:
+        """Mount an S3 bucket (or R2, GCS, MinIO, Tigris... via `endpoint`) as a folder in the
+        sandbox. No keys means anonymous access to a public bucket. Returns the mount path."""
+        body = {"bucket": bucket, "read_only": read_only}
+        for k, v in (("path", path), ("prefix", prefix), ("endpoint", endpoint), ("region", region),
+                     ("access_key_id", access_key_id), ("secret_access_key", secret_access_key),
+                     ("session_token", session_token)):
+            if v is not None:
+                body[k] = v
+        return self.client._request("POST", f"{self._base}/mounts", body)["path"]
+
+    def unmount(self, path: str) -> None:
+        """Unmount a bucket mounted with mount_s3."""
+        self.client._request("DELETE", f"{self._base}/mounts?path={urllib.parse.quote(path)}")
+
     def preview_url(self, port: int, path: str = "/") -> str:
         """URL that proxies to `port` inside the sandbox."""
         return f"{self.client.url}{self._base}/ports/{port}{path if path.startswith('/') else '/' + path}"

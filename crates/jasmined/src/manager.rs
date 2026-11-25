@@ -18,7 +18,40 @@ pub struct Config {
     /// Run VMMs unprivileged: network slot k's VMM runs as uid/gid `base + k + 1`, and
     /// templates are readable through group `base`. None runs VMMs as root.
     pub vm_uid_base: Option<u32>,
+    /// Static rclone binary, copied into a sandbox the first time it mounts a bucket.
+    pub rclone_bin: PathBuf,
 }
+
+/// An S3 (or S3-compatible) bucket to mount inside a sandbox.
+#[derive(Debug, Clone, Deserialize)]
+pub struct S3Mount {
+    pub bucket: String,
+    /// Where it appears in the sandbox. Default `/mnt/<bucket>`.
+    #[serde(default)]
+    pub path: Option<String>,
+    /// Mount only this key prefix ("folder") of the bucket.
+    #[serde(default)]
+    pub prefix: Option<String>,
+    /// For S3-compatible stores (R2, MinIO, GCS, Tigris, ...). Default: AWS S3.
+    #[serde(default)]
+    pub endpoint: Option<String>,
+    #[serde(default)]
+    pub region: Option<String>,
+    /// No keys means anonymous access (public buckets).
+    #[serde(default)]
+    pub access_key_id: Option<String>,
+    #[serde(default)]
+    pub secret_access_key: Option<String>,
+    #[serde(default)]
+    pub session_token: Option<String>,
+    #[serde(default)]
+    pub read_only: bool,
+}
+
+const AGENT_IN_GUEST: &str = "/.jasmine/agent";
+const RCLONE_IN_GUEST: &str = "/.jasmine/rclone";
+/// Links that make the agent act as libfuse's mount helper (see crates/agent/src/fuse.rs).
+const FUSERMOUNT_LINKS: &str = "for n in fusermount3 fusermount; do command -v $n >/dev/null 2>&1 || ln -sf /.jasmine/agent /usr/local/bin/$n; done";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateMeta {
@@ -233,6 +266,14 @@ impl Manager {
             .context("export image")?;
         std::fs::create_dir_all(tree.join(".jasmine"))?;
         std::fs::copy(&self.cfg.agent_bin, tree.join(".jasmine/agent")).context("install agent")?;
+        // FUSE mount helper for images without libfuse's (S3 mounts, sshfs, ...).
+        std::fs::create_dir_all(tree.join("usr/local/bin"))?;
+        for n in ["fusermount3", "fusermount"] {
+            let link = tree.join("usr/local/bin").join(n);
+            if std::fs::symlink_metadata(&link).is_err() && !tree.join("usr/bin").join(n).exists() && !tree.join("bin").join(n).exists() {
+                std::os::unix::fs::symlink(AGENT_IN_GUEST, &link)?;
+            }
+        }
         std::fs::create_dir_all(tree.join("root"))?;
         std::fs::create_dir_all(tree.join("workspace"))?;
         std::fs::create_dir_all(tree.join("etc"))?;
@@ -645,6 +686,92 @@ impl Manager {
 
     pub async fn ensure_running(&self, sbx: &Sandbox) -> Result<()> {
         self.resume_sandbox(sbx).await.map(|_| ())
+    }
+
+    /// Mount an S3 bucket inside a running sandbox with rclone over FUSE. Credentials go
+    /// in the process environment, never on its command line. Returns the mount path.
+    pub async fn mount_s3(&self, sbx: &Sandbox, m: S3Mount) -> Result<String> {
+        let ok_name = |s: &str| !s.is_empty() && s.len() <= 255 && s.chars().all(|c| c.is_ascii_alphanumeric() || "-_.".contains(c));
+        if !ok_name(&m.bucket) {
+            bail!("invalid bucket name");
+        }
+        let path = m.path.clone().unwrap_or_else(|| format!("/mnt/{}", m.bucket));
+        if !path.starts_with('/') || path.contains("..") || path.contains('\0') || path == "/" {
+            bail!("mount path must be an absolute path");
+        }
+        let prefix = m.prefix.as_deref().unwrap_or("").trim_matches('/');
+        if prefix.contains("..") || prefix.contains('\0') {
+            bail!("invalid prefix");
+        }
+        self.ensure_running(sbx).await?;
+        let run = |script: String, env: BTreeMap<String, String>, secs: u64| {
+            let agent = sbx.agent.clone();
+            async move {
+                agent
+                    .exec(jasmine_proto::ExecRequest { argv: vec!["/bin/sh".into(), "-c".into(), script], env, timeout_ms: Some(secs * 1000), ..Default::default() }, None)
+                    .await
+            }
+        };
+        // First mount in this sandbox: bring in rclone and the FUSE helper links.
+        let have = run(format!("test -x {RCLONE_IN_GUEST}"), BTreeMap::new(), 10).await?;
+        if have.exit_code != Some(0) {
+            let bin = std::fs::read(&self.cfg.rclone_bin)
+                .with_context(|| format!("S3 mounts need rclone on the host at {} (dev/setup-host.sh installs it)", self.cfg.rclone_bin.display()))?;
+            sbx.agent.write_file(RCLONE_IN_GUEST, 0o755, &bin).await.context("copy rclone into the sandbox")?;
+        }
+        let mut env = BTreeMap::new();
+        env.insert("RCLONE_S3_PROVIDER".into(), if m.endpoint.is_some() { "Other".into() } else { "AWS".into() });
+        env.insert("RCLONE_S3_ENV_AUTH".into(), "false".into());
+        env.insert("RCLONE_S3_NO_CHECK_BUCKET".into(), "true".into());
+        for (k, v) in [
+            ("RCLONE_S3_ENDPOINT", &m.endpoint),
+            ("RCLONE_S3_REGION", &m.region),
+            ("RCLONE_S3_ACCESS_KEY_ID", &m.access_key_id),
+            ("RCLONE_S3_SECRET_ACCESS_KEY", &m.secret_access_key),
+            ("RCLONE_S3_SESSION_TOKEN", &m.session_token),
+        ] {
+            if let Some(v) = v {
+                env.insert(k.into(), v.clone());
+            }
+        }
+        let remote = if prefix.is_empty() { format!(":s3:{}", m.bucket) } else { format!(":s3:{}/{prefix}", m.bucket) };
+        let script = format!(
+            "{FUSERMOUNT_LINKS}; mkdir -p /var/log {p} && exec {RCLONE_IN_GUEST} mount {r} {p} --daemon --daemon-wait 30s --allow-other \
+             --vfs-cache-mode writes --vfs-write-back 1s --dir-cache-time 10s --log-file /var/log/jasmine-mount.log --log-level NOTICE{ro}",
+            p = shell_quote_str(&path),
+            r = shell_quote_str(&remote),
+            ro = if m.read_only { " --read-only" } else { "" },
+        );
+        let out = run(script, env, 60).await?;
+        if out.exit_code != Some(0) {
+            let log = sbx.agent.read_file("/var/log/jasmine-mount.log").await.unwrap_or_default();
+            bail!("mount failed: {}{}", out.stderr.trim(), tail(&String::from_utf8_lossy(&log)));
+        }
+        Ok(path)
+    }
+
+    /// Unmount a FUSE mount (e.g. an S3 bucket) inside a sandbox.
+    pub async fn unmount(&self, sbx: &Sandbox, path: &str) -> Result<()> {
+        if !path.starts_with('/') || path.contains('\0') {
+            bail!("mount path must be an absolute path");
+        }
+        self.ensure_running(sbx).await?;
+        // The agent acts as fusermount only when invoked under that name, so go through the link.
+        let out = sbx
+            .agent
+            .exec(
+                jasmine_proto::ExecRequest {
+                    argv: vec!["/bin/sh".into(), "-c".into(), format!("{FUSERMOUNT_LINKS}; fusermount3 -u {}", shell_quote_str(path))],
+                    timeout_ms: Some(30_000),
+                    ..Default::default()
+                },
+                None,
+            )
+            .await?;
+        if out.exit_code != Some(0) {
+            bail!("unmount failed: {}", out.stderr.trim());
+        }
+        Ok(())
     }
 
     pub async fn is_paused(&self, sbx: &Sandbox) -> bool {
