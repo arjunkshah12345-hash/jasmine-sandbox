@@ -4,48 +4,29 @@
     @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-SemiBold.woff2") format("woff2"); font-weight: 600; }
     @font-face { font-family: "Geist Mono"; src: url("assets/fonts/GeistMono.woff2") format("woff2"); font-weight: 100 900; }
     #root { position: absolute; inset: 0; overflow: hidden; font-family: "Geist", sans-serif; color: #f4f5f0; background: #070807; }
-    .pane { position: absolute; border-radius: 28px; background: #0d0f0c; border: 2px solid rgba(244,245,240,.10); box-shadow: 0 40px 80px rgba(0,0,0,.55); overflow: hidden; }
-    #s3-repl { left: 110px; top: 220px; width: 1040px; height: 700px; }
-    #s3-meter { left: 1200px; top: 220px; width: 600px; height: 700px; padding: 52px 48px; }
-    .bar { height: 64px; border-bottom: 2px solid rgba(244,245,240,.07); display: flex; align-items: center; gap: 14px; padding: 0 28px; }
-    .bar i { width: 16px; height: 16px; border-radius: 50%; background: #2a2e27; display: block; }
-    .bar span { margin-left: 18px; font-family: "Geist Mono", monospace; font-size: 28px; color: #6b7068; }
-    #s3-lines { position: absolute; left: 48px; top: 96px; right: 30px; font-family: "Geist Mono", monospace; font-size: 31px; line-height: 56px; }
-    #s3-lines > div { opacity: 0; white-space: pre; height: 56px; }
-    .p { color: #6b7068; } .c { color: #6b7068; } .o { color: #a6e86b; }
-    .lab { font-size: 30px; font-weight: 500; color: #6b7068; letter-spacing: -0.01em; }
-    #s3-usd { margin-top: 70px; font-family: "Geist Mono", monospace; font-size: 80px; letter-spacing: -0.04em; color: #a6e86b; line-height: 1; font-variant-numeric: tabular-nums; }
-    #s3-sec { margin-top: 22px; font-family: "Geist Mono", monospace; font-size: 32px; color: #f4f5f0; }
-    #s3-rule { margin-top: 70px; height: 2px; background: rgba(244,245,240,.08); }
-    #s3-state { margin-top: 40px; display: flex; align-items: center; gap: 20px; font-size: 40px; font-weight: 600; letter-spacing: -0.03em; }
-    #s3-dot { width: 22px; height: 22px; border-radius: 50%; background: #a6e86b; box-sizing: border-box; }
-    #s3-rate { position: absolute; left: 48px; bottom: 50px; font-family: "Geist Mono", monospace; font-size: 28px; color: #6b7068; }
-    .s3-t { position: absolute; clip-path: inset(0 100% 0 0); left: 110px; top: 70px; font-size: 92px; font-weight: 600; letter-spacing: -0.045em; line-height: 1; white-space: pre; }
+    /* one card, centred: a live sandbox and what it costs, second by second */
+    #s3-meter { position: absolute; left: 580px; top: 300px; width: 760px; height: 620px; padding: 60px 64px; border-radius: 28px; background: #0d0f0c;
+      border: 2px solid rgba(244,245,240,.10); box-shadow: 0 40px 80px rgba(0,0,0,.55); overflow: hidden; }
+    .lab { font-size: 32px; font-weight: 500; color: #6b7068; letter-spacing: -0.01em; }
+    #s3-usd { margin-top: 60px; font-family: "Geist Mono", monospace; font-size: 104px; letter-spacing: -0.04em; color: #a6e86b; line-height: 1; font-variant-numeric: tabular-nums; }
+    #s3-sec { margin-top: 24px; font-family: "Geist Mono", monospace; font-size: 34px; color: #f4f5f0; }
+    #s3-rule { margin-top: 64px; height: 2px; background: rgba(244,245,240,.08); }
+    #s3-state { margin-top: 44px; display: flex; align-items: center; gap: 22px; font-size: 46px; font-weight: 600; letter-spacing: -0.03em; }
+    #s3-dot { width: 26px; height: 26px; border-radius: 50%; background: #a6e86b; box-sizing: border-box; }
+    .s3-t { position: absolute; left: 0; right: 0; top: 100px; text-align: center; clip-path: inset(0 0 100% 0); font-size: 112px; font-weight: 600; letter-spacing: -0.05em; line-height: 1; padding-bottom: 16px; white-space: pre; }
+    .s3-t .d { color: #6b7068; }
   </style>
   <div id="root" data-composition-id="s3" data-width="1920" data-height="1080">
-    <div id="tt0" class="s3-t">Create.</div><div id="tt1" class="s3-t">Run.</div><div id="tt2" class="s3-t">Pause.</div><div id="tt3" class="s3-t">Run again.</div>
-    <div id="s3-repl" class="pane">
-      <div class="bar"><i></i><i></i><i></i><span>python3</span></div>
-      <div id="s3-lines">
-        <div id="l0" style="opacity:1"><span class="p">&gt;&gt;&gt; </span>from jasmine_sdk import Jasmine</div>
-        <div id="l1" style="opacity:1"><span class="p">&gt;&gt;&gt; </span><span id="t1"></span></div>
-        <div id="l2" class="c"># ready in 0.09 s</div>
-        <div id="l3"><span class="p">&gt;&gt;&gt; </span><span id="t3"></span></div>
-        <div id="l4" class="o">'18446744073709551616\n'</div>
-        <div id="l5"><span class="p">&gt;&gt;&gt; </span><span id="t5"></span></div>
-        <div id="l6" class="c"># memory kept, compute billing stops</div>
-        <div id="l7"><span class="p">&gt;&gt;&gt; </span><span id="t7"></span></div>
-        <div id="l8"><span class="p">&gt;&gt;&gt; </span><span id="t8"></span></div>
-        <div id="l9" class="o">'still here\n'</div>
-      </div>
-    </div>
-    <div id="s3-meter" class="pane">
-      <div class="lab">this sandbox · 4 vCPU · 8 GiB</div>
+    <div id="tt0" class="s3-t">Ready in <span style="color:#a6e86b">0.09 s</span>.</div>
+    <div id="tt1" class="s3-t">Billed by the second.</div>
+    <div id="tt2" class="s3-t">Pause it. <span class="d">Memory kept.</span></div>
+    <div id="tt3" class="s3-t">Pick up where you left off.</div>
+    <div id="s3-meter">
+      <div class="lab">your sandbox · 4 vCPU · 8 GiB</div>
       <div id="s3-usd">$0.0000000</div>
       <div id="s3-sec">0.0 s billed</div>
       <div id="s3-rule"></div>
       <div id="s3-state"><div id="s3-dot"></div><span id="s3-st">starting</span></div>
-      <div id="s3-rate">$0.0000083 per second</div>
     </div>
   </div>
   <script>
@@ -72,40 +53,18 @@
       paint();
       tl.fromTo(clock, { t: 0 }, { t: 12.7, duration: 12.7, ease: "none", onUpdate: paint, immediateRender: false }, 0);
 
-      // panes settle in under the leaf as it dithers off
-      tl.from("#s3-repl", { y: 40, duration: 0.5, ease: "expo.out" }, 0);
-      tl.from("#s3-meter", { y: 24, duration: 0.5, ease: "expo.out" }, 0.15);
+      // the card settles in under the leaf as it dithers off
+      tl.from("#s3-meter", { y: 50, scale: 0.96, duration: 0.6, ease: "expo.out" }, 0);
 
-      let n = 0;
-      const title = (_, at) => {
-        const id = "#tt" + n++;
-        tl.fromTo(id, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.4, ease: "expo.out", immediateRender: false }, at);
-        tl.to(id, { clipPath: "inset(0 0% 0 100%)", duration: 0.25, ease: "power3.in" }, at + 2.75);
-      };
-      const show = (id, at) => tl.set(id, { opacity: 1 }, at);
-
-      // create
-      title("Create.", 0.0);
-      JX.type(tl, "#t1", "sbx = Jasmine().create()", 0.2, 34);
-      show("#l2", 0.9);
-      // run
-      title("Run.", 3.0);
-      show("#l3", 3.1);
-      JX.type(tl, "#t3", "sbx.exec(\"python3 -c 'print(2**64)'\").stdout", 3.2, 30);
-      show("#l4", 4.9);
-      // pause
-      title("Pause.", 6.0);
-      show("#l5", 5.95);
-      JX.type(tl, "#t5", "sbx.pause()", 6.0, 40);
-      show("#l6", 6.35);
-      tl.fromTo("#s3-meter", { scale: 1 }, { scale: 0.975, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 1 }, 6.2);
-      // run again
-      title("Run again.", 9.0);
-      show("#l7", 9.05);
-      JX.type(tl, "#t7", "sbx.resume()", 9.1, 40);
-      show("#l8", 9.75);
-      JX.type(tl, "#t8", "sbx.exec(\"echo still here\").stdout", 9.8, 34);
-      show("#l9", 10.95);
+      // headlines swap on the bar; each stays up for about 2.7 s
+      [0.0, 3.0, 6.0, 9.0].forEach((at, i) => {
+        const id = "#tt" + i;
+        tl.fromTo(id, { clipPath: "inset(0 0 100% 0)", y: 60 }, { clipPath: "inset(0 0 0% 0)", y: 0, duration: 0.45, ease: "expo.out", immediateRender: false }, at + 0.05);
+        tl.to(id, { clipPath: "inset(100% 0 0 0)", y: -40, duration: 0.25, ease: "power3.in" }, at + 2.75);
+      });
+      // a small press on the card as it pauses and resumes
+      tl.fromTo("#s3-meter", { scale: 1 }, { scale: 0.975, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 1, immediateRender: false }, 6.2);
+      tl.fromTo("#s3-meter", { scale: 1 }, { scale: 1.02, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 1, immediateRender: false }, 9.6);
       window.__timelines["s3"] = tl;
     })();
   </script>

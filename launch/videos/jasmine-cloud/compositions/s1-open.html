@@ -1,0 +1,47 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Geist", sans-serif; color: #f4f5f0; background: #070807; }
+    /* a big, slow-turning flower behind the type: the brand mark as a set piece */
+    #s1-bloom { position: absolute; left: 1080px; top: 40px; width: 1000px; height: 1000px; overflow: visible; opacity: 0; }
+    #s1-bloom ellipse { fill: none; stroke: #a6e86b; stroke-width: 0.06; }
+    .s1-l { position: absolute; left: 160px; top: 455px; padding-bottom: 20px; font-size: 150px; font-weight: 600; letter-spacing: -0.05em; line-height: 1; white-space: pre; clip-path: inset(0 0 100% 0); }
+    .s1-l .d { color: #6b7068; }
+    #s1-x { position: relative; display: inline-block; }
+    #s1-strike { position: absolute; left: -8px; right: -8px; top: 54%; height: 14px; background: #f0b7cc; transform-origin: 0 50%; border-radius: 7px; }
+    #s1-big { left: 0; right: 0; top: 410px; text-align: center; font-size: 230px; letter-spacing: -0.06em; }
+  </style>
+  <div id="root" data-composition-id="s1" data-width="1920" data-height="1080">
+    <svg id="s1-bloom" viewBox="0 0 24 24"><ellipse cx="12" cy="6.2" rx="2.6" ry="5.2" transform="rotate(0 12 12)"/><ellipse cx="12" cy="6.2" rx="2.6" ry="5.2" transform="rotate(72 12 12)"/><ellipse cx="12" cy="6.2" rx="2.6" ry="5.2" transform="rotate(144 12 12)"/><ellipse cx="12" cy="6.2" rx="2.6" ry="5.2" transform="rotate(216 12 12)"/><ellipse cx="12" cy="6.2" rx="2.6" ry="5.2" transform="rotate(288 12 12)"/></svg>
+    <div id="s1-a" class="s1-l">Sandboxes for AI agents.</div>
+    <div id="s1-b" class="s1-l">Ready in <span style="color:#a6e86b">0.09</span> seconds.</div>
+    <div id="s1-c" class="s1-l"><span class="d">But you needed&nbsp;</span><span id="s1-x">a server.<i id="s1-strike"></i></span></div>
+    <div id="s1-big" class="s1-l">Not anymore.</div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      // the bloom fades up and turns for the whole opener
+      tl.fromTo("#s1-bloom", { opacity: 0.12, rotation: -30, scale: 0.9 }, { opacity: 0.22, rotation: 0, scale: 1, duration: 1.6, ease: "power2.out", immediateRender: true }, 0);
+      tl.to("#s1-bloom", { rotation: 40, duration: 7.1, ease: "none" }, 1.6);
+      tl.to("#s1-bloom", { opacity: 0, duration: 0.5, ease: "power2.in" }, 5.6);
+
+      // one line at a time, on the beat: rises in, leaves upward
+      const line = (id, at, out) => {
+        tl.fromTo(id, { clipPath: "inset(0 0 100% 0)", y: 80 }, { clipPath: "inset(0 0 0% 0)", y: 0, duration: 0.5, ease: "expo.out", immediateRender: false }, at);
+        if (out) tl.to(id, { clipPath: "inset(100% 0 0 0)", y: -60, duration: 0.3, ease: "power3.in" }, out);
+      };
+      // the first line is already up on frame 0 (it is the thumbnail)
+      tl.set("#s1-a", { clipPath: "inset(0 0 0% 0)" }, 0);
+      tl.to("#s1-a", { clipPath: "inset(100% 0 0 0)", y: -60, duration: 0.3, ease: "power3.in" }, 1.7);
+      line("#s1-b", 2.0, 3.7);
+      line("#s1-c", 4.0, 5.7);
+      // "a server." gets struck out on the beat
+      tl.fromTo("#s1-strike", { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: "expo.out", immediateRender: true }, 5.0);
+      // the turn
+      line("#s1-big", 6.0, 7.75);
+      tl.fromTo("#s1-big", { scale: 1 }, { scale: 1.06, duration: 1.75, ease: "none", immediateRender: false }, 6.0);
+      window.__timelines["s1"] = tl;
+    })();
+  </script>
+</template>

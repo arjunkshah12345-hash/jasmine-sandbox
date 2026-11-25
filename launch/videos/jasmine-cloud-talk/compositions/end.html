@@ -1,0 +1,30 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    @font-face { font-family: "Serif Accent"; src: url("assets/fonts/InstrumentSerif-Italic.ttf") format("truetype"); font-style: italic; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Geist", sans-serif; color: #f4f5f0; }
+    #e-bg { position: absolute; inset: 0; background: radial-gradient(1100px 700px at 50% 45%, #141713 0%, #070807 70%); }
+    #e-m { position: absolute; left: 50%; top: 360px; width: 150px; height: 150px; margin-left: -75px; overflow: visible; }
+    #e-t { position: absolute; left: 0; right: 0; top: 560px; text-align: center; font-size: 96px; font-weight: 500; letter-spacing: -0.045em; line-height: 1.05; padding-bottom: 16px; white-space: pre; }
+    #e-t i { font-family: "Serif Accent", serif; font-style: italic; font-weight: 400; font-size: 1.25em; letter-spacing: -0.01em; color: #a6e86b; }
+    #e-u { position: absolute; left: 0; right: 0; top: 740px; text-align: center; font-size: 38px; color: #8a8f85; letter-spacing: -0.01em; }
+  </style>
+  <div id="root" data-composition-id="end" data-width="1920" data-height="1080">
+    <div id="e-bg"></div>
+    <svg id="e-m" viewBox="0 0 24 24"><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><circle class="ctr" cx="12" cy="12" r="1.7" fill="#a6e86b"/></svg>
+    <div id="e-t">Give your agents a <i>computer.</i></div>
+    <div id="e-u">tryjasmine.dev</div>
+  </div>
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#e-bg", { opacity: 0 }, { opacity: 1, duration: 0.35, ease: "power2.out", immediateRender: true }, 0);
+      gsap.utils.toArray("#e-m .pt").forEach((p, i) => tl.fromTo(p, { rotation: i * 72 - 140, scale: 0, svgOrigin: "12 12" }, { rotation: i * 72, scale: 1, svgOrigin: "12 12", duration: 0.8, ease: "expo.out", immediateRender: true }, 0.15 + i * 0.05));
+      tl.fromTo("#e-m .ctr", { scale: 0, svgOrigin: "12 12" }, { scale: 1, svgOrigin: "12 12", duration: 0.5, ease: "back.out(2.4)", immediateRender: true }, 0.45);
+      tl.fromTo("#e-t", { clipPath: "inset(0 0 100% 0)", y: 40 }, { clipPath: "inset(0 0 0% 0)", y: 0, duration: 0.55, ease: "expo.out", immediateRender: true }, 0.55);
+      tl.fromTo("#e-u", { opacity: 0 }, { opacity: 1, duration: 0.4, immediateRender: true }, 0.7);
+      window.__timelines["end"] = tl;
+    })();
+  </script>
+</template>
