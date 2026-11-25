@@ -1,0 +1,3 @@
+KERNEL=6.1.155
+FC_CONFIG=v1.15
+REV=jasmine1
