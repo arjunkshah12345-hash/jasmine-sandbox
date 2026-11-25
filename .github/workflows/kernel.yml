@@ -1,0 +1,61 @@
+name: kernel
+# Builds Jasmine's guest kernel (Firecracker's CI config + dev/kernel/jasmine.config) for
+# x86_64 and aarch64, and publishes it as release kernel-<version>-<rev> if that tag
+# doesn't exist yet. dev/setup-host.sh downloads it. Bump REV in dev/kernel/VERSION to ship a new one.
+on:
+  push:
+    paths: [dev/kernel/**, .github/workflows/kernel.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - { arch: x86_64, runner: ubuntu-24.04, target: vmlinux, out: vmlinux, karch: x86 }
+          - { arch: aarch64, runner: ubuntu-24.04-arm, target: Image, out: arch/arm64/boot/Image, karch: arm64 }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          . dev/kernel/VERSION
+          sudo apt-get -qq update && sudo apt-get -qq install -y build-essential flex bison bc libelf-dev libssl-dev >/dev/null
+          curl -fsSL "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL}.tar.xz" | tar -xJ
+          cd "linux-${KERNEL}"
+          curl -fsSL -o .config "https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/${FC_CONFIG}/${{ matrix.arch }}/vmlinux-${KERNEL}.config"
+          ARCH=${{ matrix.karch }} scripts/kconfig/merge_config.sh -m .config ../dev/kernel/jasmine.config
+          make ARCH=${{ matrix.karch }} olddefconfig
+          # Every option we asked for must have survived olddefconfig.
+          grep -E '^CONFIG_' ../dev/kernel/jasmine.config | while read -r want; do grep -qx "$want" .config || { echo "missing: $want" >&2; exit 1; }; done
+          make ARCH=${{ matrix.karch }} -j"$(nproc)" ${{ matrix.target }} >/dev/null
+          mkdir -p ../dist
+          cp ${{ matrix.out }} "../dist/vmlinux-${KERNEL}-${REV}-${{ matrix.arch }}"
+          cp .config "../dist/vmlinux-${KERNEL}-${REV}-${{ matrix.arch }}.config"
+          ls -la ../dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kernel-${{ matrix.arch }}
+          path: dist/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: dist, merge-multiple: true }
+      - name: Release (only if this version isn't published yet)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          . dev/kernel/VERSION
+          TAG="kernel-${KERNEL}-${REV}"
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "$TAG already published"; exit 0; fi
+          (cd dist && sha256sum * > SHA256SUMS && cat SHA256SUMS)
+          gh release create "$TAG" dist/* --target "${{ github.sha }}" --title "Guest kernel ${KERNEL} (${REV})" \
+            --notes "Jasmine's guest kernel: Firecracker's CI config (${FC_CONFIG}) for Linux ${KERNEL}, plus dev/kernel/jasmine.config (FUSE for S3 mounts). Used by dev/setup-host.sh. Not a Jasmine release."
