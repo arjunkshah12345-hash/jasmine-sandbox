@@ -7,17 +7,15 @@
     #s6-lock { position: absolute; left: 0; right: 0; top: 300px; display: flex; justify-content: center; align-items: center; gap: 36px; }
     #s6-m { width: 170px; height: 170px; overflow: visible; }
     #s6-w { font-size: 168px; font-weight: 600; letter-spacing: -0.055em; line-height: 1; white-space: pre; }
-    #s6-cmd { position: absolute; left: 50%; top: 575px; transform: translateX(-50%); }
-    #s6-pill { padding: 22px 36px; border: 2px solid rgba(166,232,107,0.35); border-radius: 16px; background: #0d0f0c; font-family: "Geist Mono", monospace; font-size: 38px; white-space: pre; min-width: 1060px; }
-    #s6-pill .d { color: #6b7068; } #s6-pill .u { color: #a6e86b; }
-    #s6-u { position: absolute; left: 0; right: 0; top: 750px; text-align: center; font-size: 46px; font-weight: 500; letter-spacing: -0.02em; color: #6b7068; white-space: pre; }
+    #s6-url { position: absolute; left: 0; right: 0; top: 560px; text-align: center; font-size: 96px; font-weight: 600; letter-spacing: -0.045em; line-height: 1.1; color: #a6e86b; white-space: pre; }
+    #s6-u { position: absolute; left: 0; right: 0; top: 720px; text-align: center; font-size: 46px; font-weight: 500; letter-spacing: -0.02em; color: #6b7068; white-space: pre; }
     #s6-u b { color: #f4f5f0; font-weight: 500; }
     #s6-fade { position: absolute; inset: 0; background: #070807; opacity: 0; }
   </style>
   <div id="root" data-composition-id="s6" data-width="1920" data-height="1080">
     <div id="s6-lock"><svg id="s6-m" viewBox="0 0 24 24"><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><ellipse class="pt" cx="12" cy="6.2" rx="2.6" ry="5.2" fill="#f4f5f0"/><circle class="ctr" cx="12" cy="12" r="1.7" fill="#a6e86b"/></svg><div id="s6-w">Jasmine Cloud</div></div>
-    <div id="s6-cmd"><div id="s6-pill"><span class="d">export </span><span id="s6-c1"></span><span id="s6-c2" class="u"></span></div></div>
-    <div id="s6-u"><b>tryjasmine.dev</b> · $2 free, no card</div>
+    <div id="s6-url">tryjasmine.dev</div>
+    <div id="s6-u"><b>Live today.</b> $2 free, no card.</div>
     <div id="s6-fade"></div>
   </div>
   <script>
@@ -28,9 +26,7 @@
       });
       tl.fromTo("#s6-m .ctr", { scale: 0, svgOrigin: "12 12" }, { scale: 1, svgOrigin: "12 12", duration: 0.5, ease: "back.out(2.4)", immediateRender: true }, 0.35);
       tl.fromTo("#s6-w", { clipPath: "inset(0 100% 0 0)", x: -30 }, { clipPath: "inset(0 0% 0 0)", x: 0, duration: 0.7, ease: "expo.out", immediateRender: true }, 0.5);
-      tl.fromTo("#s6-pill", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out", immediateRender: true }, 1.0);
-      JX.type(tl, "#s6-c1", "JASMINE_URL=", 1.15, 40);
-      JX.type(tl, "#s6-c2", "https://api.tryjasmine.dev", 1.45, 40);
+      tl.fromTo("#s6-url", { clipPath: "inset(0 0 100% 0)", y: 50 }, { clipPath: "inset(0 0 0% 0)", y: 0, duration: 0.5, ease: "expo.out", immediateRender: true }, 1.0);
       tl.fromTo("#s6-u", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out", immediateRender: true }, 2.2);
       tl.to("#s6-fade", { opacity: 1, duration: 0.45, ease: "power2.in" }, 4.05);
       window.__timelines["s6"] = tl;

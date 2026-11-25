@@ -89,6 +89,8 @@ struct BuildTemplate {
     mem_mib: u32,
     #[serde(default = "default_prewarm")]
     prewarm_mib: u32,
+    #[serde(flatten)]
+    opts: crate::manager::BuildOpts,
 }
 fn default_prewarm() -> u32 {
     256
@@ -105,7 +107,7 @@ async fn list_templates(State(st): State<AppState>) -> impl IntoResponse {
 }
 
 async fn build_template(State(st): State<AppState>, Json(b): Json<BuildTemplate>) -> ApiResult<impl IntoResponse> {
-    let meta = st.mgr.build_template(&b.name, &b.image, b.vcpus, b.mem_mib, b.prewarm_mib).await?;
+    let meta = st.mgr.build_template(&b.name, &b.image, b.vcpus, b.mem_mib, b.prewarm_mib, b.opts).await?;
     Ok((StatusCode::CREATED, Json(meta)))
 }
 
@@ -268,7 +270,9 @@ async fn preview(st: State<AppState>, Path((id, port, rest)): Path<(String, u16,
 
 /// Reverse-proxy HTTP to `127.0.0.1:<port>` inside the sandbox, over vsock.
 /// The guest sees `Host: localhost:<port>`, so dev servers with host checks
-/// (Vite, Next) accept it without configuration.
+/// (Vite, Next) and Chrome's DevTools endpoint accept it without configuration.
+/// WebSocket upgrades are passed through, so CDP (driving a browser in the
+/// sandbox) and dev-server hot reload work over the same URL.
 async fn proxy(State(st): State<AppState>, id: String, port: u16, rest: String, req: Request) -> Response {
     let result: Result<Response, ApiError> = async {
         let sbx = st.mgr.get(&id).await.ok_or_else(not_found)?;
@@ -279,23 +283,39 @@ async fn proxy(State(st): State<AppState>, id: String, port: u16, rest: String, 
             .await
             .map_err(|e| ApiError(StatusCode::BAD_GATEWAY, format!("nothing listening on port {port}: {e:#}")))?;
         let (mut parts, body) = req.into_parts();
+        let upgrade = parts.headers.contains_key(header::UPGRADE);
+        let client_upgrade = if upgrade { parts.extensions.remove::<hyper::upgrade::OnUpgrade>() } else { None };
         let path = format!("/{rest}{}", parts.uri.query().map(|q| format!("?{q}")).unwrap_or_default());
         parts.uri = path.parse().map_err(|_| ApiError(StatusCode::BAD_REQUEST, "bad path".into()))?;
         parts.headers.remove(header::AUTHORIZATION);
-        for h in ["connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade", "te", "trailer"] {
+        // Hop-by-hop headers stay on this hop, except the pair that asks for an upgrade.
+        for h in ["keep-alive", "proxy-connection", "transfer-encoding", "te", "trailer"] {
             parts.headers.remove(h);
+        }
+        if !upgrade {
+            parts.headers.remove(header::CONNECTION);
         }
         parts.headers.insert(header::HOST, format!("localhost:{port}").parse().unwrap());
         let (mut sender, conn) = hyper::client::conn::http1::handshake(hyper_util::rt::TokioIo::new(stream))
             .await
             .map_err(|e| ApiError(StatusCode::BAD_GATEWAY, format!("handshake: {e}")))?;
         tokio::spawn(async move {
-            let _ = conn.await;
+            let _ = conn.with_upgrades().await;
         });
-        let res = sender
+        let mut res = sender
             .send_request(axum::http::Request::from_parts(parts, body))
             .await
             .map_err(|e| ApiError(StatusCode::BAD_GATEWAY, format!("upstream: {e}")))?;
+        if res.status() == StatusCode::SWITCHING_PROTOCOLS {
+            let client_upgrade = client_upgrade
+                .ok_or_else(|| ApiError(StatusCode::BAD_GATEWAY, "upstream switched protocols unasked".into()))?;
+            let upstream = hyper::upgrade::on(&mut res);
+            tokio::spawn(async move {
+                let (Ok(up), Ok(down)) = (upstream.await, client_upgrade.await) else { return };
+                let (mut up, mut down) = (hyper_util::rt::TokioIo::new(up), hyper_util::rt::TokioIo::new(down));
+                let _ = tokio::io::copy_bidirectional(&mut up, &mut down).await;
+            });
+        }
         Ok(res.map(axum::body::Body::new))
     }
     .await;

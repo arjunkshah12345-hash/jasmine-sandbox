@@ -1,0 +1,58 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Serif Accent"; src: url("assets/fonts/InstrumentSerif-Italic.ttf") format("truetype"); font-style: italic; }
+    #root { position: absolute; inset: 0; overflow: visible; font-family: "Geist", sans-serif; color: #fff; pointer-events: none; }
+    /* each caption is two halves either side of the speaker's head */
+    .g { position: absolute; left: 0; right: 0; top: 0; height: 1080px; opacity: 0; }
+    .h { position: absolute; top: 560px; font-size: 118px; font-weight: 500; letter-spacing: -0.045em; line-height: 1; white-space: pre; padding: 10px 0 24px;
+      text-shadow: 0 6px 40px rgba(0,0,0,.28); clip-path: inset(0 0 100% 0); }
+    .L { right: 1120px; text-align: right; }
+    .R { left: 1120px; }
+    .sm { font-size: 88px; }
+    .h i { font-family: "Serif Accent", serif; font-style: italic; font-weight: 400; font-size: 1.32em; letter-spacing: -0.02em; }
+    .h .lf { color: #a6e86b; }
+    .big { font-size: 150px; }
+  </style>
+  <div id="root" data-composition-id="cap" data-width="1920" data-height="1080" data-layout-allow-overflow>
+    <div id="c-thousand" class="g"><div class="h L">a <i>thousand</i></div><div class="h R">lines.</div></div>
+    <div id="c-where" class="g"><div class="h L">run</div><div class="h R"><i>them?</i></div></div>
+    <div id="c-own" class="g"><div class="h L">its <i>own</i></div><div class="h R">computer.</div></div>
+    <div id="c-tenth" class="g"><div class="h L">ready in</div><div class="h R"><i class="lf">0.09 s.</i></div></div>
+    <div id="c-server" class="g"><div class="h L sm" style="top:590px">I don't have a</div><div class="h R big"><i>server.</i></div></div>
+    <div id="c-launch" class="g"><div class="h L big">Jasmine</div><div class="h R big"><i class="lf">Cloud.</i></div></div>
+    <div id="c-chatbot" class="g"><div class="h L">nowhere</div><div class="h R">to <i>run.</i></div></div>
+    <div id="c-give" class="g"><div class="h L sm" style="top:590px">give yours a</div><div class="h R"><i>computer.</i></div></div>
+  </div>
+  <script>
+    (() => {
+      const C = window.CUES, tl = gsap.timeline({ paused: true });
+      // [group, cue, show offset from the cue's start (null = 0.8 s before its end), extra hold after the cue ends]
+      const G = [
+        ["c-thousand", "thousand", 0, 0.5],
+        ["c-where", "where", 0.2, 0.4],
+        ["c-own", "own", 0, 0.3],
+        ["c-tenth", "tenth", 0, 0.5],
+        ["c-server", "server", 0.25, 0.6],
+        ["c-launch", "launch", null, 0.9],
+        ["c-chatbot", "chatbot", 0, 0.5],
+        ["c-give", "give", 0, 0.3],
+      ];
+      G.forEach(([id, cue, off, hold], n) => {
+        const [a, b] = C[cue];
+        const on = off === null ? b - 0.8 : a + off;
+        let off_ = b + hold;
+        const next = G[n + 1] && C[G[n + 1][1]];
+        if (cue === "launch") off_ = Math.min(off_, C.signin[0] - 0.1);
+        if (next) off_ = Math.min(off_, (G[n + 1][2] === null ? next[1] - 0.8 : next[0] + G[n + 1][2]) - 0.05);
+        const g = "#" + id, L = g + " .L", R = g + " .R";
+        tl.set(g, { opacity: 1, visibility: "visible" }, on);
+        tl.fromTo(L, { clipPath: "inset(0 0 100% 0)", y: 50 }, { clipPath: "inset(0 0 0% 0)", y: 0, duration: 0.45, ease: "expo.out", immediateRender: false }, on);
+        tl.fromTo(R, { clipPath: "inset(0 0 100% 0)", y: 50 }, { clipPath: "inset(0 0 0% 0)", y: 0, duration: 0.5, ease: "expo.out", immediateRender: false }, on + 0.14);
+        tl.to(g, { opacity: 0, duration: 0.18, ease: "power2.in" }, off_ - 0.18);
+        tl.set(g, { opacity: 0, visibility: "hidden" }, off_);
+      });
+      window.__timelines["cap"] = tl;
+    })();
+  </script>
+</template>

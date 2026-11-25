@@ -163,7 +163,7 @@ for b in range(int(DUR // 2) + 1):
         main = 8 <= tb < 28.5
         claim = 28.5 <= tb < 32.5
         paused = 16 <= tb < 19.5
-        if intro:  # sub pulse under the errors
+        if intro:  # sub pulse under the opening lines
             add(np.sin(2 * np.pi * hz(root - 24) * t_(0.3)) * np.exp(-t_(0.3) * 9), tb, 0.5)
         if (half and k in (0, 2)) or build or main or claim:
             add(kick(), tb, 0.95 if not paused else 0.6)
@@ -193,21 +193,18 @@ for b in range(int(DUR // 2) + 1):
             add(pluck(m), t0 + k * step + 0.375, g * 0.35, -0.5 if k % 2 else 0.5)
 
 # ---------- hits on picture ----------
-add(pop(520), 0.5, 0.35)          # error 1
-for i in range(11):                # ls /dev/kvm types
-    add(tick(), 1.5 + i / 16, 0.12)
-add(pop(480), 3.0, 0.35)          # error 2
-add(whoosh(0.4), 4.0, 0.35)       # title in
-for i in range(45):                # export line types
-    add(tick(), 6.1 + i * 0.037, 0.1, -0.2 + (i % 5) * 0.1)
+add(whoosh(0.35), 1.9, 0.3)       # "Ready in 0.09 seconds."
+add(pop(1500), 2.25, 0.3)
+add(whoosh(0.35), 3.9, 0.3)       # "But you needed a server."
+add(pop(480), 5.0, 0.45)          # struck out
+add(kick(big=True), 6.0, 0.6)     # "Not anymore."
 add(riser(1.0), 7.0, 0.7)
 add(impact(), 8.0, 0.85)          # Jasmine Cloud
 add(whoosh(0.3), 9.92, 0.35)      # leaf dithers off
-add(pop(1500), 10.9, 0.4)         # ready in 0.09 s
-add(pop(1700), 14.9, 0.4)         # 2**64
+add(pop(1500), 10.9, 0.4)         # meter starts
+add(pop(1700), 13.05, 0.3)        # "Billed by the second."
 add(pop(800), 16.2, 0.4)          # pause: meter freezes
 add(pop(1400), 19.6, 0.4)         # resume
-add(pop(1700), 20.95, 0.35)       # still here
 add(riser(1.0), 21.0, 0.55)
 add(impact(), 22.0, 0.8)          # leaf world
 add(kick(big=True), 22.85, 0.5)   # price lands
@@ -219,8 +216,7 @@ for at in (28.9, 29.7, 30.5):      # claims land
     add(tick(), at, 0.3)
 add(riser(1.0), 31.5, 0.55)
 add(impact(), 32.5, 0.9)          # end card
-for i in range(38):                # pill types
-    add(tick(), 33.65 + i * 0.025, 0.08)
+add(pop(1700), 33.5, 0.3)         # tryjasmine.dev
 
 # ---------- mix ----------
 music_duck = duck

@@ -15,3 +15,9 @@ Choices:
 - The terminal error is the daemon's real message (dev/setup-host.sh). The REPL uses the real Python SDK (create, exec, pause, resume).
 
 Render: `npm run render` (about 25 MB at the default quality).
+
+## Revision 2026-11-24: launch-y, no code
+- The terminal opener is gone. It now opens on type: "Sandboxes for AI agents." → "Ready in 0.09 seconds." → "But you needed a server." (struck out) → "Not anymore." → the reveal.
+- The Python REPL is gone. The middle is one centred cost meter with plain headlines.
+- The end card shows tryjasmine.dev instead of the export line.
+- Score re-cued to the new picture (tools/score.py). `npx hyperframes check` passes.
