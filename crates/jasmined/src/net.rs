@@ -97,6 +97,11 @@ ip6tables -C FORWARD -d $R -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 
 ip6tables -C FORWARD -s $R -d $R -j DROP 2>/dev/null || ip6tables -I FORWARD -s $R -d $R -j DROP
 ip6tables -C FORWARD -s $R -d fd00:ec2::/32 -j DROP 2>/dev/null || ip6tables -I FORWARD -s $R -d fd00:ec2::/32 -j DROP
 ip6tables -C INPUT -s $R -j DROP 2>/dev/null || ip6tables -I INPUT -s $R -j DROP
+# ...except neighbour discovery. Unlike ARP, it is ICMPv6 and passes through INPUT; without
+# it the slot can never resolve the host's address and nothing is forwarded. (-I puts these above the drop.)
+for t in neighbour-solicitation neighbour-advertisement; do
+  ip6tables -C INPUT -s $R -p ipv6-icmp --icmpv6-type $t -j ACCEPT 2>/dev/null || ip6tables -I INPUT -s $R -p ipv6-icmp --icmpv6-type $t -j ACCEPT
+done
 ip6tables -C FORWARD -s $R -p tcp --dport 25 -j DROP 2>/dev/null || ip6tables -I FORWARD -s $R -p tcp --dport 25 -j DROP
 "#
     ))
