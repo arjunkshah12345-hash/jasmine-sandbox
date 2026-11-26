@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Code, Callout } from "@/components/docs/kit";
 import { Prose, DocTitle } from "@/components/docs/prose";
 
-export const metadata: Metadata = { title: "SDKs · Jasmine", description: "The Jasmine TypeScript and Python SDKs." };
+export const metadata: Metadata = { title: "Python and TypeScript SDKs for AI agent sandboxes · Jasmine", description: "Create sandboxes, run commands, move files, pause, snapshot, fork, open a browser and mount S3 from Python or TypeScript. Zero dependencies.", alternates: { canonical: "/docs/sdk/" } };
 
 const methods: [string, string, string][] = [
   ["new Jasmine(opts?)", "Jasmine(url=None, api_key=None)", "Client. Reads JASMINE_URL (default http://127.0.0.1:7171) and JASMINE_API_KEY."],
@@ -10,14 +10,17 @@ const methods: [string, string, string][] = [
   ["jasmine.get(id)", "jasmine.get(id)", "Attach to an existing sandbox."],
   ["jasmine.list()", "jasmine.list()", "All sandboxes on the host."],
   ["jasmine.templates()", "jasmine.templates()", "All templates."],
-  ["jasmine.buildTemplate({ name, image, vcpus?, memMib? })", "jasmine.build_template(name, image, vcpus=2, mem_mib=1024)", "Turn an OCI image into a template."],
+  ["jasmine.buildTemplate({ name, image, vcpus?, memMib?, setup?, start?, readyPort? })", "jasmine.build_template(name, image, vcpus=2, mem_mib=1024, setup=, start=, ready_port=)", "Turn an OCI image into a template. setup runs once; start is left running in the snapshot."],
   ["sbx.exec(cmd, { env, cwd, timeoutMs, stdin })", "sbx.exec(cmd, env=, cwd=, timeout_ms=, stdin=)", "Run a command. A string goes through /bin/sh -c; an array is exec'd directly."],
   ["sbx.files.write(path, data, { mode })", "sbx.write_file(path, data, mode=None)", "Write a file (string or bytes)."],
   ["sbx.files.read(path) / readText(path)", "sbx.read_file(path)", "Read a file."],
   ["sbx.pause()", "sbx.pause()", "Suspend to disk, keeping memory and processes. The next call resumes it."],
   ["sbx.resume()", "sbx.resume()", "Resume explicitly."],
   ["sbx.snapshot()", "sbx.snapshot()", "Save memory, files and processes as a new template."],
-  ["sbx.previewUrl(port, path?)", "sbx.preview_url(port, path=\"/\")", "URL that proxies to a port inside the sandbox."],
+  ["sbx.previewUrl(port, path?)", "sbx.preview_url(port, path=\"/\")", "URL that proxies to a port inside the sandbox. WebSockets work too."],
+  ["sbx.cdpUrl(port = 9222)", "sbx.cdp_url(port=9222)", "WebSocket URL for the browser in a browser sandbox, for Playwright or Puppeteer."],
+  ["sbx.mountS3({ bucket, path?, prefix?, endpoint?, … })", "sbx.mount_s3(bucket, path=, prefix=, endpoint=, …)", "Mount an S3 or S3-compatible bucket as a folder. Returns the path."],
+  ["sbx.unmount(path)", "sbx.unmount(path)", "Unmount a bucket."],
   ["sbx.delete()", "sbx.delete()", "Stop the VM and free its disk and network slot."],
 ];
 

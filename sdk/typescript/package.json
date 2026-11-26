@@ -1,13 +1,42 @@
 {
   "name": "jasmine-sdk",
   "version": "0.1.0",
-  "description": "TypeScript client for Jasmine sandboxes",
+  "description": "TypeScript SDK for Jasmine: open-source sandboxes for AI agents. Firecracker microVMs ready in ~100 ms, with exec, files, pause, snapshots, forks, browser (CDP) and S3 mounts.",
   "license": "Apache-2.0",
+  "homepage": "https://tryjasmine.dev/docs/sdk/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arjunkshah12345-hash/jasmine-sandbox.git",
+    "directory": "sdk/typescript"
+  },
+  "bugs": "https://github.com/arjunkshah12345-hash/jasmine-sandbox/issues",
+  "keywords": [
+    "sandbox",
+    "ai-agents",
+    "code-interpreter",
+    "firecracker",
+    "microvm",
+    "code-execution",
+    "llm",
+    "agent",
+    "e2b-alternative",
+    "playwright",
+    "cdp",
+    "isolation"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
-  "engines": { "node": ">=18" },
-  "scripts": { "build": "tsc -p ." },
-  "devDependencies": { "typescript": "^5.6.0" }
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
 }

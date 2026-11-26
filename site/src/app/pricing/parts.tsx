@@ -6,6 +6,7 @@ import { Card, Heading } from "@/components/site2/bits";
 import { useUser } from "@/lib/auth";
 import { REPO } from "@/lib/jasmine-data";
 import { RATES, STD, stdHour, usd } from "@/lib/pricing";
+import { PRICING_FAQ } from "@/lib/pricing-faq";
 
 
 export function Plans() {
@@ -150,21 +151,13 @@ function Row({ k, v }: { k: string; v: string }) {
   );
 }
 
-const FAQ: [string, string][] = [
-  ["Is the open-source version limited?", "No. Cloud runs the same binary you can install. We charge for running the machines, not for features."],
-  ["How do I start on Cloud?", `Sign in, create an API key, and point JASMINE_URL at https://api.tryjasmine.dev. Every account starts with ${usd(RATES.trialCredit, 0)} of credit, no card needed. Top up from $10 when you want more.`],
-  ["Can a runaway agent run up a bill?", "Every sandbox has a timeout (one hour unless you set another, up to a day), and usage comes out of credit you bought up front, so you can never owe more than you put in. At $0, running sandboxes are paused, never deleted."],
-  ["How does billing work?", "Per second, from create to delete, for the vCPUs and memory a sandbox was given. A paused sandbox keeps its memory and running processes and is billed only for the storage its snapshot uses. No minimum, no charge per start, no egress fees."],
-  ["Do API keys work today?", `Yes. Create one in the dashboard and set it as JASMINE_API_KEY on your self-hosted daemon and in your agent; the same key will work on Cloud.`],
-  ["Can I move between self-hosted and Cloud?", "Yes. The API and SDKs are the same; change JASMINE_URL."],
-];
 
 export function PricingFaq() {
   return (
     <section className="mx-auto max-w-3xl px-6 pb-24">
       <h2 className="text-2xl font-semibold tracking-tight text-white">Pricing questions</h2>
       <dl className="mt-6 divide-y divide-white/[0.08] border-y border-white/[0.08]">
-        {FAQ.map(([q, a]) => (
+        {PRICING_FAQ.map(([q, a]) => (
           <div key={q} className="py-5">
             <dt className="font-medium text-white">{q}</dt>
             <dd className="mt-2 leading-relaxed text-zinc-400">{a}</dd>

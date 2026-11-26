@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { Copy } from "@/components/docs/kit";
 import { Prose, DocTitle } from "@/components/docs/prose";
 
-export const metadata: Metadata = { title: "Agent setup prompt · Jasmine", description: "One prompt that has your coding agent install Jasmine and route untrusted code through sandboxes." };
+export const metadata: Metadata = { title: "Agent setup prompt: give Claude Code, Codex or Cursor a sandbox · Jasmine", description: "One prompt that has your coding agent install Jasmine, start it with a key, run a smoke test and route untrusted code through sandboxes.", alternates: { canonical: "/docs/agents/" } };
 
 export default function AgentPrompt() {
   const prompt = readFileSync(join(process.cwd(), "public/agent-setup.md"), "utf8");

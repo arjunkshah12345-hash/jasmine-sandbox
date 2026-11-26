@@ -1,0 +1,11 @@
+/** Home page FAQ. Shown on the page and as FAQPage structured data, so the two can't disagree. */
+export const HOME_FAQ: { q: string; a: string }[] = [
+  { q: "What is Jasmine?", a: "Jasmine gives every AI agent task its own small computer: a Firecracker microVM with its own kernel, ready in about a tenth of a second. It's open source (Apache-2.0) and also runs hosted as Jasmine Cloud." },
+  { q: "Is it production ready?", a: "It's early. Everything on this page passes an end-to-end suite on real Firecracker on every push, and the hosted version is live, but self-hosted Jasmine runs on one host today: no multi-host scheduler yet, and running sandboxes don't survive a daemon restart." },
+  { q: "How much does it cost?", a: "Self-hosted is free. Jasmine Cloud is $0.030 an hour for 4 vCPU and 8 GiB, billed per second from prepaid credit, with $2 free and no card. A paused sandbox only pays for storage. See [pricing](/pricing)." },
+  { q: "Is Jasmine an alternative to E2B, Modal or Daytona?", a: "Yes: the same job, with an open-source engine you can also run yourself. On aisandboxbench's harness Jasmine's median comes first on 12 of 25 metrics against 13 hosted providers, and loses on raw disk writes and big bursts. Side-by-side numbers are on the [compare pages](/compare)." },
+  { q: "What do I need to run it myself?", a: "A Linux machine with `/dev/kvm`: bare metal, or a cloud VM with nested virtualization. One command installs Firecracker, the guest kernel and an XFS reflink store. No KVM? See [fixing \"no /dev/kvm\"](/guides/fix-no-dev-kvm), or use Jasmine Cloud." },
+  { q: "Can an AI agent use a web browser in a sandbox?", a: "Yes. A template can keep headless Chromium running inside its snapshot, so the browser accepts Playwright or Puppeteer connections the moment the sandbox exists. See [browser sandboxes](/docs/browser)." },
+  { q: "Why a microVM instead of a container?", a: "Containers share the host's kernel, so a kernel bug is everyone's problem. Jasmine gives each sandbox its own kernel and still starts it faster than Docker does on the same machine (87 ms vs 174 ms to a first command in fairbench)." },
+  { q: "Can I bring my own image?", a: "Yes, any OCI image. Templates can have their own vCPU and memory sizes, run setup commands, keep a process running, and a snapshot of a running sandbox is a template too." },
+];

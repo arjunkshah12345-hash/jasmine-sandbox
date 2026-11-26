@@ -7,6 +7,8 @@ import { LB, FB, metric, jasmineRow, fmt, REPO, INSTALL, CREDITS, img } from "@/
 import { Card, CopyInstall, Heading } from "./bits";
 import { useUser } from "@/lib/auth";
 import { DitherWordmark } from "./extra";
+import { HOME_FAQ } from "@/lib/faq";
+import { Md } from "@/components/seo/md";
 
 const jr = (id: string) => jasmineRow(metric(id)).median!;
 
@@ -78,14 +80,6 @@ export function OpenSource() {
   );
 }
 
-const FAQ = [
-  ["Is it production ready?", "It's v0.1. Everything on this page passes a 32-check end-to-end suite on real Firecracker on every push, but it runs on one host today: no multi-host scheduler yet, and running sandboxes don't survive a daemon restart."],
-  ["What do I need to run it?", "A Linux machine with /dev/kvm: bare metal, or a cloud VM with nested virtualization. The installer brings Firecracker, the guest kernel and an XFS reflink store."],
-  ["Is there a hosted version?", "Jasmine Cloud is in early access: request it from the pricing page. The open-source version is the same engine, self-hosted, and free forever."],
-  ["How were the benchmarks run?", "With aisandboxbench's own open-source harness and published flags, compared to its published results; and with fairbench, which runs Docker, gVisor and Kata on the same machine as Jasmine. All raw data is in the repo."],
-  ["Why a microVM instead of a container?", "Containers share the host kernel. Jasmine gives each sandbox its own kernel and still creates it faster than Docker does on the same machine."],
-  ["Can I bring my own image?", "Yes, any OCI image. Templates can have their own vCPU and memory sizes, and a snapshot of a running sandbox is a template too."],
-];
 
 export function Faq() {
   const [open, setOpen] = useState(0);
@@ -93,7 +87,7 @@ export function Faq() {
     <section id="faq" className="mx-auto grid max-w-6xl gap-12 px-6 py-24 lg:grid-cols-[0.8fr_1.2fr]">
       <Heading kicker="FAQ" title="Questions, answered" />
       <div className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
-        {FAQ.map(([q, a], i) => (
+        {HOME_FAQ.map(({ q, a }, i) => (
           <div key={q}>
             <button
               type="button"
@@ -104,7 +98,10 @@ export function Faq() {
               <span className="font-medium">{q}</span>
               <span className={`text-xl text-zinc-500 transition ${open === i ? "rotate-45" : ""}`}>+</span>
             </button>
-            {open === i && <p className="-mt-1 pb-5 leading-relaxed text-zinc-400">{a}</p>}
+            {/* Always in the page (hidden, not removed) so search engines can read every answer. */}
+            <p hidden={open !== i} className="-mt-1 pb-5 leading-relaxed text-zinc-400 [&_a]:text-[var(--leaf)] [&_code]:rounded [&_code]:bg-white/[0.06] [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]">
+              <Md>{a}</Md>
+            </p>
           </div>
         ))}
       </div>
@@ -152,7 +149,7 @@ export function Cta() {
 export function Footer() {
   const cols = [
     { h: "Product", l: [["Features", "/#features"], ["SDKs", "/#sdk"], ["Benchmarks", "/#benchmarks"], ["Pricing", "/pricing"], ["Status", "/status"], ["Dashboard", "/dashboard"]] },
-    { h: "Learn", l: [["Docs", "/docs"], ["Blog", "/blog"], ["Agent setup prompt", "/docs/agents"], ["How it works", "/#how"]] },
+    { h: "Learn", l: [["Docs", "/docs"], ["Guides", "/guides"], ["Compare providers", "/compare"], ["Blog", "/blog"], ["Agent setup prompt", "/docs/agents"]] },
     { h: "Open source", l: [["GitHub", REPO], ["Releases", `${REPO}/releases`], ["Contributing", `${REPO}/blob/master/CONTRIBUTING.md`], ["Security", `${REPO}/blob/master/SECURITY.md`]] },
     { h: "Benchmarks", l: [["fairbench", `${REPO}/tree/master/bench/fair`], ["aisandboxbench results", `${REPO}/blob/master/results/aisandboxbench-2026-11-21.md`], ["aisandboxbench.com", "https://aisandboxbench.com"]] },
   ];

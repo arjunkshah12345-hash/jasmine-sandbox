@@ -1,0 +1,44 @@
+name: sdk-publish
+# Publishes both SDKs when a tag like sdk-v0.1.0 is pushed. The tag's version must match
+# sdk/typescript/package.json and sdk/python/pyproject.toml.
+# One-time setup: repo secret NPM_TOKEN (an npm automation token), and on PyPI a trusted publisher
+# for project jasmine-sdk -> this repo, workflow sdk-publish.yml, environment pypi.
+on:
+  push:
+    tags: ["sdk-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches both package versions
+        run: |
+          V="${GITHUB_REF_NAME#sdk-v}"
+          grep -q "\"version\": \"$V\"" sdk/typescript/package.json || { echo "package.json is not $V" >&2; exit 1; }
+          grep -q "^version = \"$V\"" sdk/python/pyproject.toml || { echo "pyproject.toml is not $V" >&2; exit 1; }
+
+  npm:
+    needs: check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, registry-url: "https://registry.npmjs.org" }
+      - run: cd sdk/typescript && npm install --no-audit --no-fund && npm run build && npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  pypi:
+    needs: check
+    runs-on: ubuntu-24.04
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install -q build && python3 -m build sdk/python --outdir dist
+      - uses: pypa/gh-action-pypi-publish@release/v1

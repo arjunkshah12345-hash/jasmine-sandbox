@@ -3,7 +3,7 @@ import { Code, Callout } from "@/components/docs/kit";
 import { Prose, DocTitle } from "@/components/docs/prose";
 import { RATES, STD, stdHour, usd } from "@/lib/pricing";
 
-export const metadata: Metadata = { title: "Jasmine Cloud · Jasmine", description: "Hosted Jasmine sandboxes: same API, prepaid per-second billing." };
+export const metadata: Metadata = { title: "Jasmine Cloud: hosted sandboxes for AI agents · Jasmine", description: "Hosted Jasmine sandboxes with the same API: $0.030/hour for 4 vCPU / 8 GiB, billed per second from prepaid credit, $2 free.", alternates: { canonical: "/docs/cloud/" } };
 
 const limits: [string, string, string][] = [
   ["Running at once", "2", "20"],

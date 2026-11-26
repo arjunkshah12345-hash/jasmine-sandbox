@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Prose, DocTitle } from "@/components/docs/prose";
 
-export const metadata: Metadata = { title: "Concepts · Jasmine", description: "Templates, snapshots, lifecycle and isolation in Jasmine." };
+export const metadata: Metadata = { title: "How Jasmine sandboxes work: templates, snapshots, isolation · Jasmine", description: "Templates, memory-snapshot restore, the sandbox lifecycle, and the network and kernel isolation between Firecracker microVMs.", alternates: { canonical: "/docs/concepts/" } };
 
 export default function Concepts() {
   return (
@@ -35,7 +35,7 @@ export default function Concepts() {
         </ul>
         <h2 id="isolation">Isolation</h2>
         <p>
-          Every sandbox is a Firecracker microVM with its own kernel, in its own network namespace. Outbound internet works through NAT. The cloud
+          Every sandbox is a Firecracker microVM with its own kernel, in its own network namespace. Outbound internet works through NAT, over IPv4 and IPv6. The cloud
           metadata endpoint, the host&apos;s own services and other sandboxes are blocked by firewall rules, and an end-to-end test checks each of those
           on every push.
         </p>
