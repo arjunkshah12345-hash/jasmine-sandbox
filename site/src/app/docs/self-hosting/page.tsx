@@ -3,7 +3,7 @@ import { Code, Callout } from "@/components/docs/kit";
 import { Prose, DocTitle } from "@/components/docs/prose";
 import { INSTALL } from "@/lib/jasmine-data";
 
-export const metadata: Metadata = { title: "Self-hosting · Jasmine", description: "Run Jasmine on your own Linux machines." };
+export const metadata: Metadata = { title: "Self-host sandboxes for AI agents on Linux · Jasmine", description: "Run Jasmine on your own Linux machine with KVM: install, templates, configuration, unprivileged VMMs and the guest kernel.", alternates: { canonical: "/docs/self-hosting/" } };
 
 const env: [string, string, string][] = [
   ["JASMINE_API_KEY", "unset", "Require Authorization: Bearer <key> on /v1."],

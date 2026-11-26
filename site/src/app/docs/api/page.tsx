@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Code } from "@/components/docs/kit";
 import { Prose, DocTitle } from "@/components/docs/prose";
 
-export const metadata: Metadata = { title: "HTTP API · Jasmine", description: "The Jasmine HTTP API reference." };
+export const metadata: Metadata = { title: "Sandbox HTTP API reference · Jasmine", description: "Every Jasmine HTTP endpoint: create, exec, files, pause, resume, snapshot, previews, S3 mounts and templates.", alternates: { canonical: "/docs/api/" } };
 
 const routes: [string, string, string][] = [
   ["POST", "/v1/sandboxes", "Create. Body (all optional): template, env, labels, key, cpu, memory_mib. 201 with id and timings."],
@@ -15,9 +15,11 @@ const routes: [string, string, string][] = [
   ["POST", "/v1/sandboxes/{id}/pause", "Pause. 204."],
   ["POST", "/v1/sandboxes/{id}/resume", "Resume. Any other call also resumes."],
   ["POST", "/v1/sandboxes/{id}/snapshot", "Save as a new template. 201 with the template."],
-  ["ANY", "/v1/sandboxes/{id}/ports/{port}/{path}", "Preview: proxies to a port inside the sandbox."],
+  ["ANY", "/v1/sandboxes/{id}/ports/{port}/{path}", "Preview: proxies to a port inside the sandbox, WebSocket upgrades included."],
+  ["POST", "/v1/sandboxes/{id}/mounts", "Mount an S3 bucket. Body: bucket, path, prefix, endpoint, region, access_key_id, secret_access_key, session_token, read_only. 201 with path."],
+  ["DELETE", "/v1/sandboxes/{id}/mounts?path=", "Unmount. 204."],
   ["GET", "/v1/templates", "List templates."],
-  ["POST", "/v1/templates", "Build. Body: name, image, vcpus (2), mem_mib (1024), prewarm_mib (256)."],
+  ["POST", "/v1/templates", "Build. Body: name, image, vcpus (2), mem_mib (1024), prewarm_mib (256), setup, start, ready_port."],
   ["GET / DELETE", "/v1/templates/{name}", "Get or delete a template."],
   ["GET", "/healthz", "Liveness. Never needs auth."],
 ];

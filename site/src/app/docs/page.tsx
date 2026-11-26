@@ -3,7 +3,7 @@ import { Code, Callout } from "@/components/docs/kit";
 import { Prose, DocTitle } from "@/components/docs/prose";
 import { INSTALL, REPO } from "@/lib/jasmine-data";
 
-export const metadata: Metadata = { title: "Docs · Jasmine", description: "Install Jasmine, create your first sandbox, and wire it into your agent." };
+export const metadata: Metadata = { title: "Docs: sandboxes for AI agents · Jasmine", description: "Install Jasmine, create your first AI agent sandbox in Python or TypeScript, and wire it into your agent.", alternates: { canonical: "/docs/" } };
 
 export default function DocsHome() {
   return (

@@ -4,7 +4,8 @@ import { usePathname } from "next/navigation";
 
 export const DOCS: { group: string; pages: [string, string][] }[] = [
   { group: "Start", pages: [["Introduction", "/docs"], ["Agent setup prompt", "/docs/agents"], ["Concepts", "/docs/concepts"]] },
-  { group: "Build", pages: [["SDKs", "/docs/sdk"], ["HTTP API", "/docs/api"]] },
+  { group: "Build", pages: [["SDKs", "/docs/sdk"], ["HTTP API", "/docs/api"], ["Browser sandboxes", "/docs/browser"], ["S3 mounts", "/docs/storage"]] },
+  { group: "Learn", pages: [["Guides", "/guides"], ["Compare providers", "/compare"]] },
   { group: "Run", pages: [["Jasmine Cloud", "/docs/cloud"], ["Self-hosting", "/docs/self-hosting"]] },
 ];
 

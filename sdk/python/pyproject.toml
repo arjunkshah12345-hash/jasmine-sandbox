@@ -5,9 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "jasmine-sdk"
 version = "0.1.0"
-description = "Python client for Jasmine sandboxes"
+description = "Python SDK for Jasmine: open-source sandboxes for AI agents (Firecracker microVMs ready in ~100 ms). Standard library only."
+readme = { text = "Python SDK for [Jasmine](https://tryjasmine.dev): open-source sandboxes for AI agents. Create a Firecracker microVM in about 100 ms, run commands, move files, pause, snapshot, fork, open a browser over CDP and mount S3 buckets. Standard library only. Docs: https://tryjasmine.dev/docs/sdk/", content-type = "text/markdown" }
+keywords = ["sandbox", "ai agents", "code interpreter", "firecracker", "microvm", "code execution", "llm", "e2b alternative"]
+classifiers = ["License :: OSI Approved :: Apache Software License", "Programming Language :: Python :: 3", "Topic :: Software Development :: Libraries", "Intended Audience :: Developers"]
 license = { text = "Apache-2.0" }
 requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://tryjasmine.dev"
+Documentation = "https://tryjasmine.dev/docs/sdk/"
+Source = "https://github.com/arjunkshah12345-hash/jasmine-sandbox"
 
 [tool.setuptools]
 packages = ["jasmine_sdk"]

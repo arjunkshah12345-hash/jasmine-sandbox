@@ -1,0 +1,35 @@
+# Jasmine
+
+> Open-source sandboxes for AI agents. Every sandbox is a Firecracker microVM with its own kernel, restored from a memory snapshot, so it is ready for a first command in about 100 ms. Self-host it on any Linux machine with KVM (Apache-2.0), or use Jasmine Cloud: $0.030/hour for 4 vCPU / 8 GiB, billed per second from prepaid credit, $2 free.
+
+Key facts:
+- Start-up: ~100 ms from create to first command; ~28 ms per command (aisandboxbench's open-source harness, self-run, Nov 2026). First on 12 of 25 metrics against 13 hosted providers; weaker on raw disk writes and large bursts.
+- Features: pause/resume with memory and processes kept, snapshots and forks, preview URLs with WebSockets, headless browser sandboxes (CDP), S3 bucket mounts, outbound IPv6, any OCI image as a template.
+- Isolation: own kernel per sandbox; no access to other sandboxes, the host, the cloud metadata endpoint, or outbound SMTP.
+- SDKs: TypeScript (zero dependencies) and Python (standard library only); plain HTTP API.
+
+## Docs
+- [Introduction](https://tryjasmine.dev/docs/): install and first sandbox
+- [Agent setup prompt](https://tryjasmine.dev/docs/agents/): have Claude Code, Codex or Cursor set Jasmine up
+- [SDKs](https://tryjasmine.dev/docs/sdk/) and [HTTP API](https://tryjasmine.dev/docs/api/)
+- [Browser sandboxes](https://tryjasmine.dev/docs/browser/) and [S3 mounts](https://tryjasmine.dev/docs/storage/)
+- [Jasmine Cloud](https://tryjasmine.dev/docs/cloud/) and [Self-hosting](https://tryjasmine.dev/docs/self-hosting/)
+- [Pricing](https://tryjasmine.dev/pricing/)
+
+## Compare
+- [The best sandboxes for AI agents, measured](https://tryjasmine.dev/compare/)
+- [Jasmine vs E2B](https://tryjasmine.dev/compare/e2b/), [vs Modal](https://tryjasmine.dev/compare/modal/), [vs Daytona](https://tryjasmine.dev/compare/daytona/), [vs Vercel Sandbox](https://tryjasmine.dev/compare/vercel-sandbox/), [vs Boat](https://tryjasmine.dev/compare/boat/)
+- [Firecracker vs Docker vs gVisor vs Kata](https://tryjasmine.dev/compare/docker/)
+
+## Guides
+- [How to run AI-generated code safely](https://tryjasmine.dev/guides/run-ai-generated-code-safely/)
+- [How to give Claude Code, Codex or Cursor a sandbox](https://tryjasmine.dev/guides/sandbox-for-claude-code/)
+- [How to give an AI agent a headless browser](https://tryjasmine.dev/guides/headless-browser-for-ai-agents/)
+- [How to mount an S3 bucket in a sandbox](https://tryjasmine.dev/guides/mount-s3-in-a-sandbox/)
+- [How to fork an AI agent's environment](https://tryjasmine.dev/guides/fork-an-agent-environment/)
+- [What is a microVM?](https://tryjasmine.dev/guides/what-is-a-microvm/) and [What is an AI sandbox?](https://tryjasmine.dev/guides/what-is-an-ai-sandbox/)
+- [Fix "no /dev/kvm"](https://tryjasmine.dev/guides/fix-no-dev-kvm/)
+- [How much does a sandbox for AI agents cost?](https://tryjasmine.dev/guides/ai-sandbox-pricing/)
+
+## Source
+- [GitHub](https://github.com/arjunkshah12345-hash/jasmine-sandbox) · [Raw benchmark results](https://github.com/arjunkshah12345-hash/jasmine-sandbox/tree/master/results) · [Status](https://tryjasmine.dev/status/)
